@@ -1,0 +1,91 @@
+.root {
+    -fx-font-size: 13px;
+    -fx-base: #e9e0cf;
+    -fx-background: #f3eee3;
+    -fx-accent: #6f8f5f;
+    -fx-focus-color: #6f8f5f;
+    -fx-faint-focus-color: transparent;
+    -fx-text-base-color: #26221e;
+}
+
+.game-view {
+    -fx-background-color: #f3eee3;
+}
+
+.side-panel {
+    -fx-padding: 18 16 14 14;
+}
+
+.title {
+    -fx-font-family: "Serif";
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #26221e;
+}
+
+.status {
+    -fx-font-size: 16px;
+    -fx-text-fill: #26221e;
+}
+
+.detail {
+    -fx-text-fill: #b23a2e;
+    -fx-min-height: 18px;
+}
+
+.caption {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #746a5b;
+}
+
+.rules {
+    -fx-padding: 4;
+    -fx-font-size: 12px;
+    -fx-text-fill: #3c352d;
+}
+
+.list-view {
+    -fx-background-color: #fbf8f1;
+    -fx-background-insets: 0;
+    -fx-border-color: #d6ccb9;
+    -fx-padding: 0;
+}
+
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 3 8 3 8;
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 12px;
+    -fx-text-fill: #26221e;
+}
+
+.button, .choice-box {
+    -fx-background-color: #e6dcc8;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-border-color: #c7baa2;
+    -fx-border-radius: 3;
+}
+
+.button:hover, .choice-box:hover {
+    -fx-background-color: #dfd2b9;
+}
+
+.button:armed {
+    -fx-background-color: #d5c6a9;
+}
+
+.titled-pane > .title {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-font-size: 13px;
+    -fx-font-family: "System";
+    -fx-font-weight: normal;
+    -fx-padding: 5 2 5 2;
+}
+
+.titled-pane > .content {
+    -fx-background-color: #fbf8f1;
+    -fx-border-color: #d6ccb9;
+}
