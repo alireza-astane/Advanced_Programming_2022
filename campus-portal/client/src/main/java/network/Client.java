@@ -1,7 +1,9 @@
 package network;
 
 import GuiControllers.Gui;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Alert;
 import logic.Configuration;
 import javafx.scene.Scene;
 import logic.enums.UserType;
@@ -9,10 +11,15 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class Client implements Runnable{
+    private static final int CONNECT_TIMEOUT_MILLIS = 3000;
+
+    Consumer<String> notifier = Client::showAlert;
 
     public volatile Gui controller;
     Pinger pinger;
@@ -59,44 +66,79 @@ public class Client implements Runnable{
 
 
 
-    private void connect() throws IOException {
-        log.info("connecting to sever...");
+    /** Opens a new connection, replacing any old one, and reports whether it worked. */
+    public synchronized boolean connect() {
+        closeSocket();
+        authToken = null;
+        online = false;
+        String host = Configuration.setting("portal.host", "PORTAL_HOST", "localhost");
+        int port = port();
+        log.info("Connecting to " + host + ":" + port);
         try {
-            socket = new Socket(Configuration.setting("portal.host", "PORTAL_HOST", "localhost"),
-                    Integer.parseInt(Configuration.setting("portal.port", "PORTAL_PORT",
-                            String.valueOf(Protocol.DEFAULT_PORT))));
-            this.setOnline(true);
+            Socket opened = new Socket();
+            opened.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT_MILLIS);
+            socket = opened;
+            online = true;
             requester = new Requester(this);
             responseHandler = new ResponseHandler(this);
             pinger = new Pinger(this);
-            //pinger.start();
             responseHandler.start();
-            log.info("connected to server");
+            log.info("Connected to the server");
+            return true;
         } catch (IOException e) {
-            log.info("Connection failed.Offline mode!");
-            //go offline mode
+            closeSocket();
+            online = false;
+            log.info("Could not reach the server: " + e.getMessage());
+            return false;
         }
-
-
-        //PrintWriter printWriter = new PrintWriter(sendSocket.getOutputStream());
-        //Scanner scanner = new Scanner(sendSocket.getInputStream());
-
-        /*try {
-            while (true) {
-                String input = scanner.nextLine();
-                GetMessage.getInstance(sendSocket, input);
-            }
-        } catch (NoSuchElementException | InterruptedException e) {
-            e.printStackTrace();
-        }  */
     }
 
+    private static int port() {
+        return Integer.parseInt(Configuration.setting("portal.port", "PORTAL_PORT",
+                String.valueOf(Protocol.DEFAULT_PORT)));
+    }
+
+    private void closeSocket() {
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // it is being replaced anyway
+            }
+            socket = null;
+        }
+    }
+
+    /** Called when a connection ends. A connection that was already replaced is ignored. */
+    synchronized void connectionLost(Socket lost) {
+        if (lost == socket) {
+            online = false;
+            notifier.accept("The connection to the server was lost.");
+        }
+    }
+
+    void reportUnreachable() {
+        notifier.accept("Cannot reach the portal server at "
+                + Configuration.setting("portal.host", "PORTAL_HOST", "localhost") + ":" + port()
+                + ". Start the server, then try again.");
+    }
+
+    private static void showAlert(String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING, message);
+            alert.setHeaderText(null);
+            alert.show();
+        });
+    }
 
     public String getAuthToken() {
         return authToken;
     }
 
-    public Requester getRequester() {
+    public synchronized Requester getRequester() {
+        if (requester == null) {
+            requester = new Requester(this);
+        }
         return requester;
     }
 
@@ -134,11 +176,7 @@ public class Client implements Runnable{
 
     @Override
     public void run() {
-        try {
-            connect();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        connect();
     }
 
 

@@ -24,14 +24,28 @@ public class Requester {
     Gson gson = gsonBuilder.create();
 
     Client client;
-    public Requester(Client client) throws IOException {
+    public Requester(Client client) {
         this.client = client;
         if(client.online) {
-            printWriter = new PrintWriter(new java.io.OutputStreamWriter(
-                    client.socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            try {
+                printWriter = new PrintWriter(new java.io.OutputStreamWriter(
+                        client.socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                client.online = false;
+            }
         }
     }
     public void sendRequest(Request request){
+        if(!client.online) {
+            // A successful reconnect fetches the login page, so this request is not repeated.
+            if(!client.connect()) {
+                client.reportUnreachable();
+            }
+            return;
+        }
+        if(client.authToken == null) {
+            return;
+        }
         switch (request.getRequestType()){
             case REQUEST_CREATE_CHAT, ADD_STUDENT_TO_CW, ADD_MASTER, ADD_EXERCISE, ADD_COURSE, EDIT_COURSE, EDIT_MASTER, DDD_UNIREQUEST, MINOR_UNIREQUEST, LOGIN, REQUEST_SEND_MESSEGE -> {}
             default -> client.getPinger().setLastPageRequest(request);
@@ -43,15 +57,9 @@ public class Requester {
 
         request.setAuthToken(client.authToken);
         log.info("Send Request to server: "+request.getRequestType());
-        if(client.online) {
-            printWriter.print(gson.toJson(request));
-            printWriter.print('\n');
-            printWriter.flush();
-        }
-        else {
-            //do offline requests
-            log.info("Send Request to OfflineHandler: "+request.getRequestType());
-        }
+        printWriter.print(gson.toJson(request));
+        printWriter.print('\n');
+        printWriter.flush();
     }
 
     public void requestPageData(RequestType requestType) {   //for no arg request

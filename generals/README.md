@@ -78,4 +78,4 @@ To check the rewrite, I recorded 40 games from the 2022 program, and the tests r
 
 ## License
 
-[MIT](LICENSE)
+[MIT](../LICENSE.md)

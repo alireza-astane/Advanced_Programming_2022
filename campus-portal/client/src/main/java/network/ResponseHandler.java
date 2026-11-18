@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,11 +24,13 @@ public class ResponseHandler extends Thread {
     private final Gson gson = Protocol.GSON;
     private final BufferedReader reader;
     private final Client client;
+    private final Socket socket;
 
     public ResponseHandler(Client client) throws IOException {
         super("server-responses");
         this.client = client;
-        reader = new BufferedReader(new InputStreamReader(client.socket.getInputStream(), StandardCharsets.UTF_8));
+        socket = client.socket;
+        reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         setDaemon(true);
     }
 
@@ -41,8 +44,8 @@ public class ResponseHandler extends Thread {
         } catch (IOException e) {
             log.info("Connection ended: " + e.getMessage());
         }
-        client.setOnline(false);
-        log.info("Server disconnected. Going offline.");
+        client.connectionLost(socket);
+        log.info("Server disconnected.");
     }
 
     private void handle(String input) throws IOException {
