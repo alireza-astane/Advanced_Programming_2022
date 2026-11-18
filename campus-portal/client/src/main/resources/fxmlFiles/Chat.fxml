@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane fx:id="BackGround" prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.Chat">
+   <children>
+      <Button mnemonicParsing="false" text="Exit" />
+      <Button layoutX="35.0" mnemonicParsing="false" text="Main Menu" />
+      <Label fx:id="contactNameLabel" layoutX="398.0" layoutY="4.0" prefHeight="18.0" prefWidth="160.0" text="contact Name" textAlignment="CENTER" />
+      <ScrollPane layoutY="202.0" prefHeight="499.0" prefWidth="900.0">
+         <content>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="634.0" prefWidth="902.0">
+               <children>
+                  <TableView prefHeight="634.0" prefWidth="900.0" AnchorPane.bottomAnchor="-434.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="-700.0" AnchorPane.topAnchor="0.0">
+                     <columns>
+                        <TableColumn fx:id="message" prefWidth="737.6000236868858" text="Message" />
+                        <TableColumn fx:id="time" prefWidth="56.79998779296875" text="time" />
+                        <TableColumn fx:id="sender" prefWidth="58.39990234375" text="sender" />
+                        <TableColumn fx:id="file" prefWidth="46.400146484375" text="file" />
+                     </columns>
+                  </TableView>
+               </children>
+            </AnchorPane>
+         </content>
+      </ScrollPane>
+      <Button layoutX="112.0" mnemonicParsing="false" text="Messenger Menu" />
+      <Button fx:id="sendbutton" layoutX="857.0" layoutY="77.0" mnemonicParsing="false" text="send" />
+      <Button fx:id="choosefilebutton" layoutX="783.0" layoutY="77.0" mnemonicParsing="false" text="choose file" />
+      <TextArea fx:id="textfield" layoutX="-1.0" layoutY="106.0" prefHeight="62.0" prefWidth="900.0" />
+      <Label fx:id="filename" layoutX="716.0" layoutY="81.0" />
+   </children>
+</AnchorPane>

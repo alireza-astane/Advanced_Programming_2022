@@ -1,0 +1,15 @@
+apply plugin: 'application'
+
+dependencies {
+    implementation project(':common')
+    implementation 'at.favre.lib:bcrypt:0.10.2'
+    implementation "org.hibernate.orm:hibernate-core:$hibernateVersion"
+    runtimeOnly "com.h2database:h2:$h2Version"
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.11'
+    testRuntimeOnly "com.h2database:h2:$h2Version"
+}
+
+application {
+    applicationDefaultJvmArgs = ["-Djava.awt.headless=true"]
+    mainClass = 'ServerMain'
+}
