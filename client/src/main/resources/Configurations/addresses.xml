@@ -15,7 +15,7 @@
 <entry key="ADD_MASTER">fxmlFiles/BAddMaster.fxml</entry>
 <entry key="WEAKLY_PLAN">fxmlFiles/WeaklyPlan.fxml</entry>
 <entry key="STUDENT_PROFILE">fxmlFiles/StudentProfile.fxml</entry>
-<entry key="LOGIN">fxmlFiles/Login.fxml</entry>
+<entry key="LOGIN">fxmlFiles/login.fxml</entry>
 <entry key="ASSISTANT_COURSES_LIST">fxmlFiles/ACourseList.fxml</entry>
 <entry key="REGISTRATION">fxmlFiles/Registration.fxml</entry>
 <entry key="EDIT_COURSE">fxmlFiles/EditCourse.fxml</entry>
@@ -32,7 +32,7 @@
 <entry key="WITHDRAWAL">fxmlFiles/Withdrawal.fxml</entry>
 <entry key="ENROLLMENT_CERTIFICATE">fxmlFiles/EnrollmentCertificate.fxml</entry>
 <entry key="DORMITORY">fxmlFiles/Dormitory.fxml</entry>
-    <entry key="START">fxmlFiles/start.fxml</entry>
+    <entry key="START">fxmlFiles/Start.fxml</entry>
     <entry key="GENERAL_MENU">fxmlFiles/GeneralMenu.fxml</entry>
 
 </properties>

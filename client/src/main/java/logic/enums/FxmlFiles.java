@@ -36,9 +36,9 @@ public enum FxmlFiles {
     ASSISTANT_COURSES_LIST(Configuration.addresses.get("ASSISTANT_COURSES_LIST").toString()),
     BOSS_MASTERS_LIST(Configuration.addresses.get("BOSS_MASTERS_LIST").toString()),
     GENERAL_MENU(Configuration.addresses.get("GENERAL_MENU").toString()),
-    MOHSENI_MENU(""),
-    ADMIN_MENU(""),
-    GENERAL_PROFILE(""), ASSISTANT_TEMPORARY_SCORES(""), MESSENGER_MENU(""), CW_MENU(""), UNI_REQUESTS(""), EXAMS_LIST(""), ADD_NEW_CHAT(""), MOHSENI_MESSENGER(""), MOHSENI_SEARCH_ENGINE(""), STUDENT_EDUCATIONAL_SITUATION(""), ASSISTANT_EDUCATIONAL_SITUATION(""), STUDENT_TEMPORARY_SCORES(""), MASTER_TEMPORARY_SCORES(""), SUGGESTED_COURSES_LIST("");
+    MOHSENI_MENU("fxmlFiles/MohseniMenu.fxml"),
+    ADMIN_MENU("fxmlFiles/AdminMenu.fxml"),
+    GENERAL_PROFILE("fxmlFiles/GeneralProfile.fxml"), ASSISTANT_TEMPORARY_SCORES("fxmlFiles/ATemporaryScore.fxml"), MESSENGER_MENU("fxmlFiles/MessengerMenu.fxml"), CW_MENU("fxmlFiles/CWMenu.fxml"), UNI_REQUESTS("fxmlFiles/UniRequestMenu.fxml"), EXAMS_LIST("fxmlFiles/ExamsList.fxml"), ADD_NEW_CHAT("fxmlFiles/NewChat.fxml"), MOHSENI_MESSENGER("fxmlFiles/MohseniMessenger.fxml"), MOHSENI_SEARCH_ENGINE("fxmlFiles/MohseniStudentSearch.fxml"), STUDENT_EDUCATIONAL_SITUATION("fxmlFiles/SEducationalSituation.fxml"), ASSISTANT_EDUCATIONAL_SITUATION("fxmlFiles/AEducationalSituation.fxml"), STUDENT_TEMPORARY_SCORES("fxmlFiles/STemporaryScore.fxml"), MASTER_TEMPORARY_SCORES("fxmlFiles/MTemporaryScore.fxml"), SUGGESTED_COURSES_LIST("fxmlFiles/SuggestedCourses.fxml");
 
     public final String path;
     FxmlFiles(String path){

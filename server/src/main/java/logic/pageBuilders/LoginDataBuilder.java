@@ -1,5 +1,6 @@
 package logic.pageBuilders;
 
+import logic.Configuration;
 import logic.pageDataClasses.LoginData;
 import network.Captcha;
 import network.ClientHandler;
@@ -12,7 +13,7 @@ public final class LoginDataBuilder {
     public static LoginData getLoginData(ClientHandler clientHandler) {
         LoginData loginData = new LoginData();
         Captcha captcha = Captcha.generate();
-        clientHandler.captchaCode = captcha.code();
+        clientHandler.captchaCode = Configuration.setting("portal.test.captcha", "PORTAL_TEST_CAPTCHA", captcha.code());
         loginData.setCaptchaImageFile(captcha.image());
         return loginData;
     }

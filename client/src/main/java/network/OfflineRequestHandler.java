@@ -56,59 +56,59 @@ public class OfflineRequestHandler {
     }
 
     public WeeklyPlanData loadWeeklyPlanData() throws FileNotFoundException {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = Protocol.GSON.newBuilder();
         Gson gson = builder.create();
         BufferedReader bufferedReader = null;
         bufferedReader = new BufferedReader(
-                new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//" + "WeaklyPlanData" + ".json"));
+                new FileReader(OfflineStore.path("WeeklyPlanData.json")));
         return gson.fromJson(bufferedReader, WeeklyPlanData.class);
     }
 
     public ExamsListData loadExamListData() throws FileNotFoundException {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = Protocol.GSON.newBuilder();
         Gson gson = builder.create();
         BufferedReader bufferedReader = null;
         bufferedReader = new BufferedReader(
-                new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//" + "ExamsListData" + ".json"));
+                new FileReader(OfflineStore.path("ExamsListData.json")));
         return gson.fromJson(bufferedReader, ExamsListData.class);
     }
 
 
     public EducationalSituation loadEducationalSituation() throws FileNotFoundException {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = Protocol.GSON.newBuilder();
         Gson gson = builder.create();
         BufferedReader bufferedReader = null;
         bufferedReader = new BufferedReader(
-                new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//" + "EducationalSituation" + ".json"));
+                new FileReader(OfflineStore.path("EducationalSituation.json")));
         return gson.fromJson(bufferedReader, EducationalSituation.class);
     }
 
     public MessengerData loadMessengerData() throws FileNotFoundException {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = Protocol.GSON.newBuilder();
         Gson gson = builder.create();
         BufferedReader bufferedReader = null;
         bufferedReader = new BufferedReader(
-                new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//MessengerData.json"));
+                new FileReader(OfflineStore.path("MessengerData.json")));
         return gson.fromJson(bufferedReader, MessengerData.class);
     }
 
     public MainMenuData loadMainMenuData() throws FileNotFoundException {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = Protocol.GSON.newBuilder();
         Gson gson = builder.create();
         BufferedReader bufferedReader = null;
         bufferedReader = new BufferedReader(
-                new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//MainMenuData.json"));
+                new FileReader(OfflineStore.path("MainMenuData.json")));
         return gson.fromJson(bufferedReader, MainMenuData.class);
     }
 
     public ArrayList<ChatData> loadChats() throws FileNotFoundException {
         ArrayList<ChatData> chatDatas = new ArrayList<>();
         for (int i = 0; i <messengerData.getChatsArraylist().size();i++) {
-            GsonBuilder builder = new GsonBuilder();
+            GsonBuilder builder = Protocol.GSON.newBuilder();
             Gson gson = builder.create();
             BufferedReader bufferedReader = null;
             bufferedReader = new BufferedReader(
-                    new FileReader(System.getProperty("user.dir") + "//src//main//offlineDataBase//" + "chat" + i + ".json"));
+                    new FileReader(OfflineStore.path("chat" + i + ".json")));
             chatDatas.add(gson.fromJson(bufferedReader, ChatData.class));
         }
         return chatDatas;

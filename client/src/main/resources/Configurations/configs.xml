@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-<properties>
-<entry key="addresses">./src/main/resources/Configurations/addresses.xml</entry>
-<entry key="graphics">./src/main/resources/Configurations/graphics.xml</entry>
-</properties>

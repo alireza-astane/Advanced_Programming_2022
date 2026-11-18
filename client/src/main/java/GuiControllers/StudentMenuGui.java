@@ -1,5 +1,6 @@
 package GuiControllers;
 
+import network.Protocol;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.animation.AnimationTimer;
@@ -40,7 +41,7 @@ public class StudentMenuGui extends Gui implements Initializable {
     public TextArea text;
     public SplitMenuButton gradechoice;
     public TextField entryyearfield;
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
     Gson gson = gsonBuilder.create();
     MainMenuData mainMenuData;
     public Label RegistrationTimeLabel;

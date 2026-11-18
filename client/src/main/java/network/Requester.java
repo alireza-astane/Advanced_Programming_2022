@@ -17,10 +17,9 @@ import java.util.Collections;
 
 public class Requester {
     static Logger log = LogManager.getLogger(Requester.class);
-    int authToken;
     PrintWriter printWriter;
 
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
 
     Gson gson = gsonBuilder.create();
 
@@ -28,13 +27,14 @@ public class Requester {
     public Requester(Client client) throws IOException {
         this.client = client;
         if(client.online) {
-            printWriter = new PrintWriter(client.socket.getOutputStream());
+            printWriter = new PrintWriter(new java.io.OutputStreamWriter(
+                    client.socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8));
         }
     }
     public void sendRequest(Request request){
         switch (request.getRequestType()){
             case REQUEST_CREATE_CHAT, ADD_STUDENT_TO_CW, ADD_MASTER, ADD_EXERCISE, ADD_COURSE, EDIT_COURSE, EDIT_MASTER, DDD_UNIREQUEST, MINOR_UNIREQUEST, LOGIN, REQUEST_SEND_MESSEGE -> {}
-            default -> {Client.getInstance().getPinger().setLastPageRequest(request);}  //todo complete
+            default -> client.getPinger().setLastPageRequest(request);
         }
 
 
@@ -44,7 +44,8 @@ public class Requester {
         request.setAuthToken(client.authToken);
         log.info("Send Request to server: "+request.getRequestType());
         if(client.online) {
-            printWriter.println(gson.toJson(request));
+            printWriter.print(gson.toJson(request));
+            printWriter.print('\n');
             printWriter.flush();
         }
         else {

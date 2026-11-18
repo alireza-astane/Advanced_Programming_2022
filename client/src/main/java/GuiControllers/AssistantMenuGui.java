@@ -1,5 +1,6 @@
 package GuiControllers;
 
+import network.Protocol;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.animation.AnimationTimer;
@@ -37,7 +38,7 @@ public class AssistantMenuGui extends Gui implements Initializable {
     public Button AddNewStuButton;
     public Button CWButton;
     public Button MessengerButton;
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
     Gson gson = gsonBuilder.create();
     MainMenuData mainMenuData;
     public Button MainMenuButton;
@@ -141,16 +142,9 @@ public class AssistantMenuGui extends Gui implements Initializable {
                 try {
                     LastLoginTime.setText(mainMenuData.getLastLoginTime());
                 } catch (Exception ignored) {}
-                File outputFile = new File("src//main//resources//Image//Captcha//userImage.jpg");
-                FileOutputStream fos = null;
-                try {
-                    fos = new FileOutputStream(outputFile);
-                    fos.write(mainMenuData.getUserImage());
-                    fos.flush();
-                    fos.close();
-                    InputStream inputStream = new FileInputStream(outputFile);
-                    UserImage.setImage(new Image(inputStream));
-                } catch (IOException ignored) {}
+                if (mainMenuData.getUserImage() != null) {
+                    UserImage.setImage(new Image(new java.io.ByteArrayInputStream(mainMenuData.getUserImage())));
+                }
 
             }
         });

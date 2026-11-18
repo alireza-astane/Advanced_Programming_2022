@@ -1,8 +1,8 @@
 package GuiControllers;
 
+import network.Protocol;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.jfoenix.controls.JFXDatePicker;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -27,17 +27,16 @@ import logic.pageDataClasses.LoginData;
 import network.Client;
 import network.Request;
 import network.RequestType;
-import tornadofx.control.DateTimePicker;
 
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 
 public class LoginGui extends Gui implements Initializable{
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
     Gson gson = gsonBuilder.create();
     public LoginData loginData;
     public AnchorPane BackGround;
@@ -90,13 +89,7 @@ public class LoginGui extends Gui implements Initializable{
     public void setCaptcha(){
         try {
             if(loginData.getCaptchaImageFile()!=null){
-                File outputFile = new File("src//main//resources//Image//Captcha//captcha.jpg");
-                FileOutputStream fos = new FileOutputStream(outputFile) ;
-                fos.write(loginData.getCaptchaImageFile());
-                fos.flush();
-                fos.close();
-                InputStream inputStream = new FileInputStream(outputFile);
-                ImageView imageView = new ImageView(new Image(inputStream));
+                ImageView imageView = new ImageView(new Image(new ByteArrayInputStream(loginData.getCaptchaImageFile())));
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
@@ -174,7 +167,8 @@ public class LoginGui extends Gui implements Initializable{
                 }
 
 
-        } catch (IOException ignored) {
+        } catch (RuntimeException e) {
+            ErrorLabel.setText("Could not show the login page.");
         }
     }
 

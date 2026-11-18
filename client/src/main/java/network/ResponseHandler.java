@@ -1,95 +1,100 @@
 package network;
 
+import GuiControllers.Gui;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import logic.pageDataClasses.AuthToken;
-import logic.pageDataClasses.MainMenuData;
-import logic.pageDataClasses.MessengerData;
+import logic.pageDataClasses.ErrorData;
 import logic.pageDataClasses.OfflineData;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import java.io.File;
-import java.io.FileWriter;
+
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.Socket;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-public class ResponseHandler extends Thread{
-    static GsonBuilder gsonBuilder = new GsonBuilder();
-    static Gson gson = gsonBuilder.create();
+public class ResponseHandler extends Thread {
     static Logger log = LogManager.getLogger(ResponseHandler.class);
-    public  ResponseHandler(Client client) throws IOException {
-        this.client=client;
-        this.socket=client.socket;
-        this.scanner = new Scanner(socket.getInputStream());
-    }
-    Socket socket;
-    Scanner scanner;
 
-    Client client;
-    public File bytes2File(byte[] bytes){
-        return null;
+    private final Gson gson = Protocol.GSON;
+    private final BufferedReader reader;
+    private final Client client;
+
+    public ResponseHandler(Client client) throws IOException {
+        super("server-responses");
+        this.client = client;
+        reader = new BufferedReader(new InputStreamReader(client.socket.getInputStream(), StandardCharsets.UTF_8));
+        setDaemon(true);
     }
 
     @Override
     public void run() {
         try {
-            TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        log.info("Waiting for Server Response");
-        while(scanner.hasNext()){
-        String input = scanner.nextLine();
-        Response response = gson.fromJson(input, Response.class);
-            log.info("Client got a Response from Server: "+response.getResponseType());
-        switch (response.getResponseType()){
-            case OFFLINE_DATA -> {
-                try {
-                    saveOfflineData((OfflineData)response);
-                } catch (IOException ignored) {
-                }
-
-
+            String input;
+            while ((input = Protocol.readLine(reader)) != null) {
+                handle(input);
             }
+        } catch (IOException e) {
+            log.info("Connection ended: " + e.getMessage());
+        }
+        client.setOnline(false);
+        log.info("Server disconnected. Going offline.");
+    }
+
+    private void handle(String input) throws IOException {
+        Response response = gson.fromJson(input, Response.class);
+        log.debug("Response from server: " + response.getResponseType());
+        switch (response.getResponseType()) {
+            case OFFLINE_DATA -> saveOfflineData(gson.fromJson(input, OfflineData.class));
             case AUTH_TOKEN -> {
-                AuthToken authToken = gson.fromJson(input, AuthToken.class);
-                client.setAuthToken(authToken.getAuthToken());
-                log.info("Authentication completed");
+                client.setAuthToken(gson.fromJson(input, AuthToken.class).getAuthToken());
                 client.requester.requestPageData(RequestType.LOGIN_DATA);
             }
-            default -> {
-                Client.getInstance().controller.update(input);
-            }
+            case ERROR -> showError(gson.fromJson(input, ErrorData.class).getMessage());
+            default -> showOnCurrentScreen(input);
         }
     }
-        //TODO go offline
-        log.info("Server disconnected. Going Offline...");
+
+    private void showOnCurrentScreen(String input) {
+        Gui screen = client.controller;
+        if (screen != null) {
+            Platform.runLater(() -> {
+                try {
+                    screen.update(input);
+                } catch (RuntimeException e) {
+                    log.error("Could not show a response on " + screen.getClass().getSimpleName(), e);
+                }
+            });
+        }
     }
 
-    public void saveOfflineData(OfflineData offlineData) throws IOException {
+    private static void showError(String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING, message);
+            alert.setHeaderText(null);
+            alert.show();
+        });
+    }
+
+    private void saveOfflineData(OfflineData offlineData) throws IOException {
         saveData(offlineData.getMessengerData(), "MessengerData");
-        saveData(offlineData.getMainMenuDataStr(),"MainMenuData");
-        saveData(offlineData.getExamsListData(),"ExamsListData");
-        saveData(offlineData.getWeeklyPlanData(),"WeaklyPlanData");
-        saveData(offlineData.getEducationalSituation(),"EducationalSituation");
+        saveData(offlineData.getMainMenuDataStr(), "MainMenuData");
+        saveData(offlineData.getExamsListData(), "ExamsListData");
+        saveData(offlineData.getWeeklyPlanData(), "WeeklyPlanData");
+        saveData(offlineData.getEducationalSituation(), "EducationalSituation");
         int counter = 1;
-        for(String chatStr: offlineData.getChats()){
-            saveData(chatStr,"Chat"+counter);
+        for (String chat : offlineData.getChats()) {
+            saveData(chat, "chat" + counter++);
         }
-
-
     }
-    public void saveData(String str,String name) {
-        try {
-            String offlineDataPackage = System.getProperty("user.dir")+"//src//main//offlineDataBase//";
-            FileWriter writer = new FileWriter(offlineDataPackage+name+".json");
-            writer.write(str);
-            writer.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
+    private static void saveData(String content, String name) throws IOException {
+        if (content != null) {
+            Files.writeString(Path.of(OfflineStore.path(name + ".json")), content);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package GuiControllers;
 
+import network.Protocol;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.event.ActionEvent;
@@ -34,7 +35,7 @@ import java.util.*;
 public class MasterProfileGui extends Gui implements Initializable {
     ProfileData profileData;
 
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
     Gson gson = gsonBuilder.create();
     @FXML
     javafx.scene.control.ColorPicker ColorPicker;
@@ -128,14 +129,7 @@ public class MasterProfileGui extends Gui implements Initializable {
         } catch (Exception ignored) {}
 
         try {
-            File outputFile = new File("src//main//resources//Image//Captcha//userImage.jpg");
-            FileOutputStream fos = null;
-            fos = new FileOutputStream(outputFile);
-            fos.write(profileData.getUserImage());
-            fos.flush();
-            fos.close();
-            InputStream inputStream = new FileInputStream(outputFile);
-            UserImage.setImage(new Image(inputStream));
+            UserImage.setImage(new Image(new java.io.ByteArrayInputStream(profileData.getUserImage())));
         } catch (Exception ignored) {}
 
 

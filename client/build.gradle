@@ -11,10 +11,20 @@ dependencies {
     for (module in ['base', 'graphics', 'controls', 'fxml']) {
         implementation "org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform"
     }
-    implementation 'no.tornado:tornadofx-controls:1.0.6'
-    implementation 'com.jfoenix:jfoenix:9.0.10'
+    testRuntimeOnly 'org.testfx:openjfx-monocle:21.0.2'
 }
 
 application {
-    mainClass = 'ClientMain'
+    mainClass = 'ClientLauncher'
+}
+
+test {
+    dependsOn ':server:classes'
+    doFirst {
+        systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
+    }
+    systemProperty 'testfx.headless', 'true'
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
 }

@@ -1,5 +1,6 @@
 package GuiControllers;
 
+import network.Protocol;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.event.ActionEvent;
@@ -28,7 +29,7 @@ import java.util.ResourceBundle;
 public class ChangePasswordGui extends Gui implements Initializable {
     static Logger log = LogManager.getLogger(ChangePasswordGui.class);
     public Label result;
-    GsonBuilder gsonBuilder = new GsonBuilder();
+    GsonBuilder gsonBuilder = Protocol.GSON.newBuilder();
     Gson gson = gsonBuilder.create();
 
     ChangePassData changePassData;

@@ -9,20 +9,20 @@ import javafx.stage.Stage;
 import logic.enums.FxmlFiles;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 
 public abstract class Gui {
     public abstract void update(String input);
 
     public static void setStage(Stage stage, FxmlFiles fxml) {
-        System.out.println(stage);
         FXMLLoader loader = new FXMLLoader(Gui.class.getClassLoader().getResource(fxml.path));
-        Parent root = null;
+        Parent root;
         try {
             root = loader.load();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not open " + fxml, e);
         }
-        assert root != null;
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();

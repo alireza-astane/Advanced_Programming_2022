@@ -2,6 +2,7 @@ package network;
 
 import GuiControllers.Gui;
 import javafx.fxml.FXMLLoader;
+import logic.Configuration;
 import javafx.scene.Scene;
 import logic.enums.UserType;
 import org.apache.log4j.LogManager;
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Client implements Runnable{
 
-    public Gui controller;
+    public volatile Gui controller;
     Pinger pinger;
 
 
@@ -47,21 +48,23 @@ public class Client implements Runnable{
 
     }
 
-    int authToken;
+    volatile String authToken;
 
     public FXMLLoader loader;
     Requester requester;
     ResponseHandler responseHandler;
 
     Socket socket;
-    boolean online=false;
+    volatile boolean online=false;
 
 
 
     private void connect() throws IOException {
         log.info("connecting to sever...");
         try {
-            socket = new Socket("localhost", 8080);
+            socket = new Socket(Configuration.setting("portal.host", "PORTAL_HOST", "localhost"),
+                    Integer.parseInt(Configuration.setting("portal.port", "PORTAL_PORT",
+                            String.valueOf(Protocol.DEFAULT_PORT))));
             this.setOnline(true);
             requester = new Requester(this);
             responseHandler = new ResponseHandler(this);
@@ -89,7 +92,7 @@ public class Client implements Runnable{
     }
 
 
-    public int getAuthToken() {
+    public String getAuthToken() {
         return authToken;
     }
 
@@ -109,7 +112,7 @@ public class Client implements Runnable{
         return online;
     }
 
-    public void setAuthToken(int authToken) {
+    public void setAuthToken(String authToken) {
         this.authToken = authToken;
     }
 
