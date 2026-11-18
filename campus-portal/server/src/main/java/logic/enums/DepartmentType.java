@@ -1,14 +1,16 @@
 package logic.enums;
 
 public enum DepartmentType {
-    ELECTRICAL_ENGINEERING("Electrical Engineering"),
     COMPUTER_SCIENCE("Computer Science"),
     MATHEMATICS("Mathematics"),
-    PHYSICS("Physics");
+    PHYSICS("Physics"),
+    ELECTRICAL_ENGINEERING("Electrical Engineering"),
+    CHEMISTRY("Chemistry"),
+    GENERAL_STUDIES("General Studies");
 
-    public final String name;
+    public final String title;
 
-    DepartmentType(String name) {
-        this.name = name;
+    DepartmentType(String title) {
+        this.title = title;
     }
 }

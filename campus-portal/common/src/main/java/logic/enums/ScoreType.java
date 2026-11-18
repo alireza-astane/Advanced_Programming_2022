@@ -1,7 +1,5 @@
 package logic.enums;
 
 public enum ScoreType {
-    NA,
-    TEMPORARY,
-    VERIFIED;
+    NOT_PUBLISHED, TEMPORARY, FINAL
 }

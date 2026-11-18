@@ -1,15 +1,19 @@
 package network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Request {
-    String authToken;
-    RequestType requestType;
-    ArrayList<String> arrayList;
-    byte[] fileInByte;
+    private String authToken;
+    private int requestId;
+    private final RequestType requestType;
+    private final List<String> args;
+    private byte[] file;
 
-    public Request(RequestType requestType) {
+    public Request(RequestType requestType, String... args) {
         this.requestType = requestType;
+        this.args = new ArrayList<>(Arrays.asList(args));
     }
 
     public String getAuthToken() {
@@ -20,27 +24,28 @@ public class Request {
         this.authToken = authToken;
     }
 
+    public int getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(int requestId) {
+        this.requestId = requestId;
+    }
+
     public RequestType getRequestType() {
         return requestType;
     }
 
-    public void setRequestType(RequestType requestType) {
-        this.requestType = requestType;
+    public List<String> getArgs() {
+        return args == null ? List.of() : args;
     }
 
-    public ArrayList<String> getArrayList() {
-        return arrayList;
+    public byte[] getFile() {
+        return file;
     }
 
-    public void setArrayList(ArrayList<String> arrayList) {
-        this.arrayList = arrayList;
-    }
-
-    public byte[] getFileInByte() {
-        return fileInByte;
-    }
-
-    public void setFileInByte(byte[] fileInByte) {
-        this.fileInByte = fileInByte;
+    public Request withFile(byte[] file) {
+        this.file = file;
+        return this;
     }
 }

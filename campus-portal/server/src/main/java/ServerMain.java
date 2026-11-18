@@ -8,7 +8,8 @@ public class ServerMain {
         Configuration.load();
         int port = Integer.parseInt(Configuration.setting("portal.port", "PORTAL_PORT",
                 String.valueOf(Protocol.DEFAULT_PORT)));
-        Server.getInstance().start(port);
-        Server.getInstance().acceptClients();
+        Server server = Server.getInstance();
+        server.start(port);
+        server.acceptClients();
     }
 }

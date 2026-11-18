@@ -23,30 +23,41 @@ public record Captcha(String code, byte[] image) {
         BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setColor(new Color(245, 242, 234));
+        g.setColor(new Color(245, 243, 238));
         g.fillRect(0, 0, WIDTH, HEIGHT);
+        drawNoise(g);
+        g.setFont(new Font(Font.SERIF, Font.BOLD, 32));
+        for (int i = 0; i < code.length(); i++) {
+            drawDigit(g, code.substring(i, i + 1), 18 + i * 30);
+        }
+        g.dispose();
+        return new Captcha(code, png(image));
+    }
+
+    private static void drawNoise(Graphics2D g) {
         g.setStroke(new BasicStroke(1.3f));
         for (int i = 0; i < 7; i++) {
             g.setColor(new Color(120 + RANDOM.nextInt(90), 120 + RANDOM.nextInt(90), 120 + RANDOM.nextInt(90)));
             g.drawLine(RANDOM.nextInt(WIDTH), RANDOM.nextInt(HEIGHT), RANDOM.nextInt(WIDTH), RANDOM.nextInt(HEIGHT));
         }
-        g.setFont(new Font(Font.SERIF, Font.BOLD, 32));
-        for (int i = 0; i < code.length(); i++) {
-            var original = g.getTransform();
-            int x = 18 + i * 30;
-            int y = 37 + RANDOM.nextInt(6) - 3;
-            g.rotate((RANDOM.nextDouble() - 0.5) * 0.5, x + 8.0, y - 10.0);
-            g.setColor(new Color(30 + RANDOM.nextInt(50), 35 + RANDOM.nextInt(50), 45 + RANDOM.nextInt(50)));
-            g.drawString(code.substring(i, i + 1), x, y);
-            g.setTransform(original);
-        }
-        g.dispose();
+    }
+
+    private static void drawDigit(Graphics2D g, String digit, int x) {
+        var original = g.getTransform();
+        int y = 34 + RANDOM.nextInt(6);
+        g.rotate((RANDOM.nextDouble() - 0.5) * 0.5, x + 8.0, y - 10.0);
+        g.setColor(new Color(30 + RANDOM.nextInt(50), 35 + RANDOM.nextInt(50), 45 + RANDOM.nextInt(50)));
+        g.drawString(digit, x, y);
+        g.setTransform(original);
+    }
+
+    private static byte[] png(BufferedImage image) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try {
             ImageIO.write(image, "png", bytes);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return new Captcha(code, bytes.toByteArray());
+        return bytes.toByteArray();
     }
 }
