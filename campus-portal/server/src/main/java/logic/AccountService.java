@@ -13,10 +13,16 @@ import network.Response;
 import network.Routes;
 
 import java.time.Duration;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class AccountService {
     private static final int MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Map<String, Integer> SESSIONS = new ConcurrentHashMap<>();
 
     private AccountService() {
     }
@@ -24,6 +30,7 @@ public final class AccountService {
     public static void register(Routes routes) {
         routes.open(RequestType.CAPTCHA, AccountService::captcha);
         routes.open(RequestType.LOGIN, AccountService::login);
+        routes.open(RequestType.RESUME, AccountService::resume);
         routes.on(RequestType.LOGOUT, Routes.EVERYONE, AccountService::logout);
         routes.on(RequestType.CHANGE_PASSWORD, Routes.EVERYONE, AccountService::changePassword);
         routes.on(RequestType.HOME, Routes.EVERYONE, AccountService::home);
@@ -58,7 +65,30 @@ public final class AccountService {
         if (!expired) {
             user.setLastLogin(LocalDateTime.now());
         }
-        return identity(user).put("mustChangePassword", expired);
+        Response response = identity(user).put("mustChangePassword", expired);
+        return expired ? response : withSession(response, user);
+    }
+
+    private static Response withSession(Response response, User user) {
+        byte[] key = new byte[32];
+        RANDOM.nextBytes(key);
+        String sessionKey = HexFormat.of().formatHex(key);
+        SESSIONS.put(sessionKey, user.getId());
+        return response.put("sessionKey", sessionKey);
+    }
+
+    /** Lets a client that lost its connection continue without logging in again. */
+    private static Response resume(Call call) {
+        Integer userId = SESSIONS.get(call.text(0));
+        if (userId == null) {
+            throw new Problem("Please log in again.");
+        }
+        User user = DataManager.get(User.class, userId);
+        if (!user.isCanLogin()) {
+            throw new Problem("This account can no longer log in.");
+        }
+        call.client().logIn(user, user.getLastLogin(), false);
+        return identity(user);
     }
 
     private static Response identity(User user) {
@@ -74,6 +104,7 @@ public final class AccountService {
     }
 
     private static Response logout(Call call) {
+        SESSIONS.remove(call.text(0));
         call.client().logOut();
         return null;
     }
@@ -92,7 +123,7 @@ public final class AccountService {
         user.setPassword(Passwords.hash(call.text(1)));
         user.setLastLogin(LocalDateTime.now());
         call.client().passwordChanged();
-        return identity(user);
+        return withSession(identity(user), user);
     }
 
     private static Response home(Call call) {

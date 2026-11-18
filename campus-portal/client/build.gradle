@@ -8,21 +8,41 @@ def javafxPlatform = os.contains('win') ? 'win'
 
 dependencies {
     implementation project(':common')
-    for (module in ['base', 'graphics', 'controls', 'fxml']) {
+    for (module in ['base', 'graphics', 'controls']) {
         implementation "org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform"
     }
     testRuntimeOnly 'org.testfx:openjfx-monocle:21.0.2'
+    testImplementation "org.openjfx:javafx-swing:$javafxVersion:$javafxPlatform"
 }
 
 application {
-    mainClass = 'ClientLauncher'
+    mainClass = 'ClientMain'
 }
 
 test {
+    filter { excludeTestsMatching 'ui.ScreenTour' }
     dependsOn ':server:classes'
     doFirst {
         systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
     }
+    systemProperty 'testfx.headless', 'true'
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
+}
+
+tasks.register('screenshots', Test) {
+    description = 'Renders every screen into docs/screens, using the demo data.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching 'ui.ScreenTour' }
+    dependsOn ':server:classes'
+    outputs.upToDateWhen { false }
+    doFirst {
+        systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
+    }
+    systemProperty 'portal.screenshots', rootProject.file('docs/screens').path
     systemProperty 'testfx.headless', 'true'
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'

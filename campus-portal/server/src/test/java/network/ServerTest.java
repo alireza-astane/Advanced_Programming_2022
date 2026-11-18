@@ -142,6 +142,22 @@ class ServerTest {
     }
 
     @Test
+    void aSessionCanBeResumedOnANewConnectionUntilLogout() throws IOException {
+        String key;
+        try (PortalClient first = new PortalClient(port)) {
+            key = first.login("student.lena", PASSWORD).get("sessionKey");
+        }
+        try (PortalClient second = new PortalClient(port)) {
+            second.refused("log in again", RESUME, "made-up");
+            assertEquals("Lena Ahmadi", second.ok(RESUME, key).get("fullName"));
+            second.ok(HOME);
+            second.ok(LOGOUT, key);
+            second.refused("log in", HOME);
+            second.refused("log in again", RESUME, key);
+        }
+    }
+
+    @Test
     void rolesCannotUseEachOthersRequests() throws IOException {
         try (PortalClient student = as("student.omid")) {
             student.refused("access", SAVE_COURSE, "");
