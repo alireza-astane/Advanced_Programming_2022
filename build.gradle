@@ -31,11 +31,23 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation "org.openjfx:javafx-swing:$javafxVersion:$javafxPlatform"
     testRuntimeOnly 'org.testfx:openjfx-monocle:21.0.2'
 }
 
 application {
+    mainClass = 'generals.GuiMain'
+}
+
+tasks.register('consoleStartScripts', CreateStartScripts) {
+    applicationName = 'generals-console'
     mainClass = 'generals.Main'
+    classpath = tasks.startScripts.classpath
+    outputDir = tasks.startScripts.outputDir
+}
+
+tasks.named('startScripts') {
+    dependsOn 'consoleStartScripts'
 }
 
 test {
@@ -44,6 +56,54 @@ test {
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'
     systemProperty 'prism.order', 'sw'
-    systemProperty 'prism.text', 't2k'
     systemProperty 'java.awt.headless', 'true'
+}
+
+// Builds a self-contained app. Pass -PpackageType=deb, rpm, dmg, msi or exe for an installer.
+// The JDK used must include jmods; point -PpackagingJdk at one if the default does not.
+tasks.register('packageApp', Exec) {
+    dependsOn 'installDist'
+    def javaHome = project.hasProperty('packagingJdk')
+            ? file(project.property('packagingJdk'))
+            : javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile
+    def output = layout.buildDirectory.dir('package').get().asFile
+    def type = project.findProperty('packageType') ?: 'app-image'
+    doFirst {
+        if (!new File(javaHome, 'jmods').isDirectory()) {
+            throw new GradleException("$javaHome has no jmods folder. Install them or set -PpackagingJdk.")
+        }
+        delete output
+    }
+    executable new File(javaHome, 'bin/jpackage')
+    args '--type', type,
+            '--name', 'Generals',
+            '--app-version', version,
+            '--description', 'A small shogi-style board game',
+            '--vendor', 'Alireza Astane',
+            '--input', layout.buildDirectory.dir('install/generals/lib').get().asFile.path,
+            '--main-jar', "generals-${version}.jar",
+            '--main-class', 'generals.GuiMain',
+            '--dest', output.path
+    args '--add-modules', 'java.base,java.desktop,java.logging,java.xml,jdk.unsupported'
+    if (os.contains('win')) {
+        args '--icon', file('src/packaging/generals.ico').path
+    } else if (!os.contains('mac')) {
+        args '--icon', file('src/packaging/generals.png').path
+    }
+    if (type == 'deb' || type == 'rpm') {
+        args '--linux-shortcut', '--linux-menu-group', 'Game'
+    }
+}
+
+tasks.register('screenshots', JavaExec) {
+    description = 'Renders the images used in the README into docs/.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'generals.gui.Screenshots'
+    args file('docs').path
+    systemProperties = [
+        'testfx.headless': 'true',
+        'glass.platform': 'Monocle',
+        'monocle.platform': 'Headless',
+        'prism.order': 'sw'
+    ]
 }
