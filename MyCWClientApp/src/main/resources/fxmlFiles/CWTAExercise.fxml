@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane  fx:id="BackGround" prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.CWTAExercise">
+   <children>
+      <Button layoutY="1.0" mnemonicParsing="false" onAction="#goexit" text="Log Out" />
+      <Button layoutX="59.0" layoutY="1.0" mnemonicParsing="false" onAction="#gomainmenu" text="Main Menu" />
+      <Button layoutX="134.0" layoutY="1.0" mnemonicParsing="false" onAction="#gocwmwnu" text="Courseware Menu" />
+      <Label fx:id="title" layoutX="406.0" layoutY="14.0" text="title" />
+      <Button layoutX="859.0" layoutY="32.0" mnemonicParsing="false" onAction="#downloadfile" text="File" />
+      <Label fx:id="text" layoutY="71.0" prefHeight="18.0" prefWidth="301.0" text="text"/>
+      <Label fx:id="explanation" layoutX="-3.0" layoutY="135.0" prefHeight="18.0" prefWidth="654.0" text="Explanation" />
+      <Label layoutX="773.0" layoutY="153.0" text="openTime" />
+      <Label layoutX="582.0" layoutY="153.0" text="Dealline" />
+      <Label layoutX="388.0" layoutY="153.0" text="CloseTime" />
+       <ScrollPane layoutX="-3.0" layoutY="268.0" prefHeight="432.0" prefWidth="906.0">
+           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="436.0" prefWidth="911.0">
+               <TableView fx:id="table" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0"
+                          AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                   <columns>
+                       <TableColumn fx:id="index" prefWidth="75.0" text="Index"/>
+                       <TableColumn fx:id="answer" prefWidth="149.60002899169922" text="answer Button"/>
+                       <TableColumn fx:id="scorebutton" prefWidth="101.60005187988281" text="Score button"/>
+                       <TableColumn fx:id="score" prefWidth="205.60006713867188" text="Score"/>
+                       <TableColumn fx:id="uploadtime" prefWidth="168.0" text="Upload Time"/>
+                   </columns>
+               </TableView>
+           </AnchorPane>
+       </ScrollPane>
+      <Label fx:id="label" layoutX="402.0" layoutY="177.0" text="Label" />
+      <Label fx:id="dead" layoutX="590.0" layoutY="177.0" text="Label" />
+      <Label fx:id="open" layoutX="786.0" layoutY="177.0" text="Label" />
+   </children>
+</AnchorPane>

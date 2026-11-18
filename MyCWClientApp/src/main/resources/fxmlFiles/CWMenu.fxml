@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane fx:id="BackGround"  prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.CWMenu">
+   <children>
+      <Button fx:id="exitbutton" mnemonicParsing="false" onAction="#goexit" text="Exit" />
+      <Button fx:id="mainmenubutton" layoutX="35.0" layoutY="1.0" mnemonicParsing="false" onAction="#gomainmenu" text="Main Menu" />
+      <ScrollPane layoutY="62.0" prefHeight="638.0" prefWidth="902.0">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="639.0" prefWidth="906.0">
+               <children>
+                  <TableView fx:id="table" layoutX="14.0" layoutY="23.0" prefHeight="638.0" prefWidth="906.0" AnchorPane.bottomAnchor="-324.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <columns>
+                      <TableColumn fx:id="id" prefWidth="292.8000114560127" text="Courses id" />
+                        <TableColumn fx:id="name" prefWidth="398.3999938964844" text="cource name" />
+                        <TableColumn fx:id="buttons" prefWidth="207.20001220703125" text="button" />
+                    </columns>
+                  </TableView>
+               </children>
+            </AnchorPane>
+        </content>
+      </ScrollPane>
+      <Label layoutX="419.0" layoutY="5.0" text="CW menu" />
+   </children>
+</AnchorPane>

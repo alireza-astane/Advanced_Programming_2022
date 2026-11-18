@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="BackGround" prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.SMastersListGui">
+   <children>
+      <Button fx:id="SCoursesListButton" layoutX="537.0" layoutY="1.0" mnemonicParsing="false" onAction="#goSCoursesList" text="Courses list" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      <Button fx:id="SMastersListButton" layoutX="745.0" mnemonicParsing="false" onAction="#goMastersList" text="Masters List" AnchorPane.topAnchor="0.0" />
+      <Button fx:id="ExitButton" layoutX="8.0" layoutY="2.0" mnemonicParsing="false" onAction="#goExit" text="Exit" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      <Button fx:id="MainMenuButton" layoutX="35.0" layoutY="2.0" mnemonicParsing="false" onAction="#goMainMenu" text="Main Menu" AnchorPane.topAnchor="0.0" />
+      <Label fx:id="PageLabel" layoutX="413.0" layoutY="4.0" text="Masters List" textFill="WHITE">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextField fx:id="MasterName" layoutX="801.0" layoutY="72.0" prefHeight="26.0" prefWidth="98.0" promptText="Masters Name" />
+      <Button fx:id="FilterButton" layoutX="550.0" layoutY="72.0" mnemonicParsing="false" onAction="#doFilterMastersList" text="Filter" />
+      <ScrollPane layoutY="100.0" prefHeight="601.0" prefWidth="900.0">
+         <content>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="598.0" prefWidth="900.0">
+               <children>
+                  <TableView fx:id="MastersList" prefHeight="600.0" prefWidth="900.0" AnchorPane.bottomAnchor="-294.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="-281.0" AnchorPane.topAnchor="0.0">
+                     <columns>
+                        <TableColumn fx:id="num" prefWidth="132.00000232458115" text="Mastery num" />
+                        <TableColumn fx:id="name" prefWidth="134.3999786376953" text="Master Name" />
+                        <TableColumn fx:id="department" prefWidth="161.5999755859375" text="Department" />
+                        <TableColumn fx:id="grade" prefWidth="92.79995727539062" text="Grade" />
+                        <TableColumn fx:id="email" prefWidth="181.5999755859375" text="Email" />
+                     </columns>
+                  </TableView>
+               </children>
+            </AnchorPane>
+         </content>
+      </ScrollPane>
+      <ChoiceBox fx:id="DepartmentChoice" layoutX="593.0" layoutY="72.0" prefHeight="26.0" prefWidth="96.0" />
+      <ChoiceBox fx:id="GradeChoice" layoutX="689.0" layoutY="72.0" prefHeight="26.0" prefWidth="112.0" />
+   </children>
+</AnchorPane>

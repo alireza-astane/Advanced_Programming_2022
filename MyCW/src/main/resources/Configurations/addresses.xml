@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="5044">C:\MSI\MyCW\src\main\resources\Captcha\5044.jpg</entry>
+<entry key="2412">C:\MSI\MyCW\src\main\resources\Captcha\2412.jpg</entry>
+<entry key="2356">C:\MSI\MyCW\src\main\resources\Captcha\2356.jpg</entry>
+<entry key="8899">C:\MSI\MyCW\src\main\resources\Captcha\8899.jpg</entry>
+<entry key="2406">C:\MSI\MyCW\src\main\resources\Captcha\2406.jpg</entry>
+    <entry key="img">C:\MSI\MyCW\src\main\resources\img.png</entry>
+
+</properties>

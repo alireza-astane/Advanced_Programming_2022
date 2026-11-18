@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="BackGround" prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.AddCourseGui">
+    <children>
+        <Button fx:id="applyButton" layoutX="852.0" layoutY="404.0" mnemonicParsing="false" onAction="#doapplyCourse" text="Apply" AnchorPane.bottomAnchor="270.4" AnchorPane.leftAnchor="852.0" />
+        <Button fx:id="ExitButton" layoutY="2.0" mnemonicParsing="false" onAction="#goExit" text="Exit" AnchorPane.topAnchor="0.0" />
+        <Button fx:id="MainMenuButton" layoutX="35.0" layoutY="1.0" mnemonicParsing="false" onAction="#goMainMenu" text="Main Menu" AnchorPane.topAnchor="0.0" />
+        <Label layoutX="6.0" layoutY="33.0" text="number" textFill="WHITE" AnchorPane.leftAnchor="0.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <TextField fx:id="numField" layoutX="112.0" layoutY="30.0" prefHeight="26.0" prefWidth="91.0" />
+        <Label layoutY="64.0" text="Unit:" textFill="WHITE" AnchorPane.leftAnchor="0.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="-1.0" layoutY="95.0" text="Name" textFill="WHITE" AnchorPane.leftAnchor="-1.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="-2.0" layoutY="126.0" text="Department" textFill="WHITE" AnchorPane.leftAnchor="-2.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="-2.0" layoutY="157.0" text="Semester:" textFill="WHITE">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="-1.0" layoutY="188.0" text="Master Id:" textFill="WHITE" AnchorPane.leftAnchor="-1.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <TextField fx:id="UnitField" layoutX="112.0" layoutY="61.0" prefHeight="26.0" prefWidth="91.0" />
+        <TextField fx:id="NameField" layoutX="112.0" layoutY="92.0" prefHeight="26.0" prefWidth="91.0" />
+        <TextField fx:id="SemesterField" layoutX="112.0" layoutY="154.0" prefHeight="26.0" prefWidth="91.0" />
+        <TextField fx:id="MasterIdField" layoutX="112.0" layoutY="185.0" prefHeight="26.0" prefWidth="91.0" />
+        <Label fx:id="ErrorLabel" layoutX="217.0" layoutY="34.0" prefHeight="18.0" prefWidth="200.0" textFill="RED" />
+        <Label layoutX="399.0" layoutY="4.0" text="Add/Edit Course" textFill="WHITE">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <TextField fx:id="TimeTableField" layoutX="112.0" layoutY="247.0" prefHeight="26.0" prefWidth="91.0" />
+        <Label layoutX="-1.0" layoutY="250.0" text="TimeTable:" textFill="WHITE">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="-4.0" layoutY="283.0" text="Group:" textFill="WHITE">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label layoutX="1.0" layoutY="219.0" text="Exam Time" textFill="WHITE" AnchorPane.leftAnchor="1.0">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+        <Label fx:id="DepartmentLabel" layoutX="112.0" layoutY="128.0" prefHeight="18.0" prefWidth="91.0" text="Label" textFill="WHITE">
+            <font>
+                <Font size="14.0" />
+            </font>
+        </Label>
+      <Label layoutY="311.0" text="Capacity:" textFill="WHITE">
+         <font>
+            <Font size="14.0" />
+         </font>
+      </Label>
+      <TextField fx:id="GroupField" layoutX="112.0" layoutY="280.0" prefHeight="26.0" prefWidth="91.0" AnchorPane.bottomAnchor="393.6" />
+      <TextField fx:id="CapacityField" layoutX="112.0" layoutY="308.0" prefHeight="26.0" prefWidth="91.0" />
+      <DatePicker layoutX="105.0" layoutY="217.0" prefHeight="26.0" prefWidth="105.0" />
+      <TextField fx:id="preField" layoutX="112.0" layoutY="337.0" prefHeight="26.0" prefWidth="91.0" />
+      <TextField fx:id="CoField" layoutX="112.0" layoutY="371.0" prefHeight="26.0" prefWidth="91.0" />
+      <TextField fx:id="TAField" layoutX="112.0" layoutY="404.0" prefHeight="26.0" prefWidth="91.0" />
+    </children>
+</AnchorPane>

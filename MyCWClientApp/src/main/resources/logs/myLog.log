@@ -1,0 +1,4 @@
+2022-08-13 03:32:03.610 [main] INFO  ClientMain - Application triggered
+2022-08-13 03:32:03.614 [Thread-2] INFO  network.Client - connecting to sever...
+2022-08-13 03:32:03.623 [Thread-2] INFO  network.Client - Connection failed.Offline mode!
+2022-08-13 03:32:05.660 [main] INFO  ClientMain - Application Finished

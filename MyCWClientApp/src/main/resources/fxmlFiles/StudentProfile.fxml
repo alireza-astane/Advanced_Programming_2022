@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="BackGround" prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.StudentProfileGui">
+   <Label layoutX="10.0" layoutY="170.0" prefHeight="18.0" prefWidth="128.0" text="Full Name" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="188.0" prefHeight="18.0" prefWidth="82.0" text="NationalCode" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="206.0" text="StudentShip Number" textFill="WHITE" />
+   <Label layoutX="12.0" layoutY="341.0" text="PhoneNumber" textFill="WHITE" />
+   <Label layoutX="12.0" layoutY="354.0" text="Email" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="260.0" text="Mean Score" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="278.0" text="Department" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="296.0" text="Supervisor" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="314.0" text="EntryYear" textFill="WHITE" />
+   <Label layoutX="10.0" layoutY="224.0" text="Grade" textFill="WHITE" />
+   <Label layoutX="12.0" layoutY="242.0" text="State" textFill="WHITE" />
+   <Button fx:id="ExitButton" layoutX="2.0" layoutY="2.0" mnemonicParsing="false" onAction="#goExit" text="Exit" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+   <Button fx:id="MainMenuButton" layoutX="36.0" mnemonicParsing="false" onAction="#goMainMenu" text="Main Menu" />
+   <ImageView fx:id="UserImage" fitHeight="120.0" fitWidth="120.0" layoutX="480.0" pickOnBounds="true" preserveRatio="true" />
+   <Label fx:id="FullNameLabel" layoutX="362.0" layoutY="170.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="NationalNumberLabel" layoutX="366.0" layoutY="188.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="StudentShipNumber" layoutX="366.0" layoutY="206.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="MeanScoreLabel" layoutX="366.0" layoutY="260.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="DepartmentLabel" layoutX="366.0" layoutY="278.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="SupervisorLabel" layoutX="366.0" layoutY="295.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="EntryYearLabel" layoutX="366.0" layoutY="314.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="GradeLabel" layoutX="366.0" layoutY="223.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label fx:id="StateLabel" layoutX="364.0" layoutY="241.0" prefHeight="18.0" prefWidth="232.0" textFill="WHITE" />
+   <Label layoutX="280.0" layoutY="4.0" text="Profile" textFill="WHITE">
+      <font>
+         <Font size="14.0" />
+      </font>
+   </Label>
+   <TextField fx:id="PhoneNumberField" layoutX="362.0" layoutY="337.0" prefHeight="12.0" prefWidth="232.0" />
+   <TextField fx:id="EmailField" layoutX="362.0" layoutY="361.0" prefHeight="12.0" prefWidth="232.0" />
+   <Button fx:id="EditButton" layoutY="366.0" mnemonicParsing="false" onAction="#doEdit" text="Edit" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" />
+   <ColorPicker fx:id="ColorPicker" layoutX="-2.0" layoutY="26.0" onAction="#doChangeBackGround" prefHeight="26.0" prefWidth="114.0">
+      <value>
+         <Color />
+      </value>
+   </ColorPicker>
+</AnchorPane>

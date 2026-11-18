@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="MASTER_MENU">fxmlFiles/MasterMenu.fxml</entry>
+<entry key="STUDENT_MENU">fxmlFiles/StudentMenu.fxml</entry>
+<entry key="M_REQUESTS">fxmlFiles/MRequests.fxml</entry>
+<entry key="RECORD">fxmlFiles/Record.fxml</entry>
+<entry key="CHANGE_PASSWORD">fxmlFiles/ChangePassword.fxml</entry>
+<entry key="MINOR">fxmlFiles/Minor.fxml</entry>
+<entry key="DOCTORAL_DISSERTATION_DEFENSE">fxmlFiles/DoctoralDissertationDefense.fxml</entry>
+<entry key="EDUCATION">fxmlFiles/Education.fxml</entry>
+<entry key="RECOMMENDATION">fxmlFiles/Recommendation.fxml</entry>
+<entry key="BOSS_MASTERS_LIST">fxmlFiles/BMastersList.fxml</entry>
+<entry key="MASTER_PROFILE">fxmlFiles/MasterProfile.fxml</entry>
+<entry key="ADD_MASTER">fxmlFiles/BAddMaster.fxml</entry>
+<entry key="WEAKLY_PLAN">fxmlFiles/WeaklyPlan.fxml</entry>
+<entry key="STUDENT_PROFILE">fxmlFiles/StudentProfile.fxml</entry>
+<entry key="LOGIN">fxmlFiles/Login.fxml</entry>
+<entry key="ASSISTANT_COURSES_LIST">fxmlFiles/ACourseList.fxml</entry>
+<entry key="REGISTRATION">fxmlFiles/Registration.fxml</entry>
+<entry key="EDIT_COURSE">fxmlFiles/EditCourse.fxml</entry>
+<entry key="PHD_REQUESTS">fxmlFiles/PhdRequests.fxml</entry>
+<entry key="STUDENT_MASTERS_LIST">fxmlFiles/SMastersList.fxml</entry>
+<entry key="ASSISTANT_MENU">fxmlFiles/AssistantMenu.fxml</entry>
+<entry key="ADD_NEW_MASTER">fxmlFiles/AddNewMaster.fxml</entry>
+<entry key="ADD_NEW_USER">fxmlFiles/AddNewUser.fxml</entry>
+<entry key="EDIT_MASTER">fxmlFiles/BEditMaster.fxml</entry>
+<entry key="ADD_NEW_STUDENT">fxmlFiles/AddNewStudent.fxml</entry>
+<entry key="ADD_COURSE">fxmlFiles/AddCourse.fxml</entry>
+<entry key="UG_REQUESTS">fxmlFiles/UGRequests.fxml</entry>
+<entry key="STUDENT_COURSES_LIST">fxmlFiles/SCoursesList.fxml</entry>
+<entry key="WITHDRAWAL">fxmlFiles/Withdrawal.fxml</entry>
+<entry key="ENROLLMENT_CERTIFICATE">fxmlFiles/EnrollmentCertificate.fxml</entry>
+<entry key="DORMITORY">fxmlFiles/Dormitory.fxml</entry>
+    <entry key="START">fxmlFiles/start.fxml</entry>
+    <entry key="GENERAL_MENU">fxmlFiles/GeneralMenu.fxml</entry>
+
+</properties>

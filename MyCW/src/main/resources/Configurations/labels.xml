@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="WrongCaptcha">Wrong captcha</entry>
+    <entry key="WrongUser">No such username</entry>
+    <entry key="WrongPass">Wrong password</entry>
+    <entry key="ChatRequest">1 requested to start a chat with you</entry>
+    <entry key="addedToCourseCW">You have been added to course @1 in cw</entry>
+    <entry key="Success">Operation was Successful</entry>
+    <entry key="RecommendationRequest">@1 with Studentship number @2 has requested for recommendation</entry>
+    <entry key="Recommendation">Me, @1 ensure that Mr/Ms @2 with studentShip number: @3 have passed successfully courses @4 and have assisted for courses @5 </entry>
+    <entry key="Enrollment">It is ensured that Mr/Ms @1 with studentShip number: @2 is studying in sharif university of technology in major @3 . expiration time: @4</entry>
+    <entry key="MinorRequest">@1 with Studentship number @2 has requested to attempt minor studies in 3</entry>
+    <entry key="WithDrawRequest">@1 with Studentship number @2 has requested to withdraw</entry>
+    <entry key="DDDRequest">You can defende your doctoral dissertation defense in @1</entry>
+    <entry key="NoResult">no result</entry>
+    <entry key="RegisterToCourseRequest">@1 with Studentship number @2 has requested to register to course @3 with id 4</entry>
+    <entry key="CourseIsFull">Course's capacity is full</entry>
+    <entry key="SameExamTime">labelStr</entry>
+    <entry key="SameClassTime">labelStr</entry>
+    <entry key="NoMoreFromCIE">Only one course form center of islamic education os allowed</entry>
+    <entry key="PrerequisiteNotAcquired">Prerequisite is Not Acquired</entry>
+
+
+
+
+
+
+
+</properties>

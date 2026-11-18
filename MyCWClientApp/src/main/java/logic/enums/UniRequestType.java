@@ -1,0 +1,11 @@
+package logic.enums;
+
+public enum UniRequestType {
+    DORMITORY,
+    MINOR,
+    WITHDRAWAL,
+    RECOMMENDATION,
+    DOCTORAL_DISSERTATION_DEFENSE,
+    ENROLLMENT,
+    SCORE_PROTESTATION;
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="minorPassAverageScore">17</entry>
+<entry key="unitSelectionDurationInHour">1</entry>
+<entry key="maxUnits">24</entry>
+<entry key="passScore">10</entry>
+    <entry key="loginTimeDifference">3</entry>
+</properties>

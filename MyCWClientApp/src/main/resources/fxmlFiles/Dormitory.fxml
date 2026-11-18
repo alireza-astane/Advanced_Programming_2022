@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="BackGround" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GuiControllers.DormitoryGui">
+    <Label layoutX="242.0" layoutY="3.0" text="Dormitory Request" textFill="WHITE">
+        <font>
+        <Font size="14.0" />
+        </font>
+    </Label>
+    <Button fx:id="ExitButton" layoutY="2.0" mnemonicParsing="false" onAction="#goExit" text="Exit" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" />
+    <Button fx:id="MainMenuButton" layoutX="35.0" mnemonicParsing="false" onAction="#goMainMenu" text="MainMenu" AnchorPane.topAnchor="0.0" />
+    <Button fx:id="RequestButton" layoutX="394.0" layoutY="180.0" mnemonicParsing="false" onAction="#doRequestDormitory" text="Request" />
+</AnchorPane>
