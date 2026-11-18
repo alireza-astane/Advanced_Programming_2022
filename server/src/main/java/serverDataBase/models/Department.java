@@ -36,15 +36,15 @@ public class Department {
     @Column(name = "departmentAssistantId")
     int departmentAssistantId;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "departmentId")
     private List<Course> departmentCourses = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "departmentId")
     private List<Master> departmentMasters = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "departmentId")
     private List<Student> departmentStudents = new ArrayList<>();
 

@@ -35,8 +35,10 @@ public class Course {
     @Column(name = "courseMasterId",nullable = false)
     int courseMasterId;
 
-    @Column(name = "courseWeaklyPlan",nullable = false)
-    List<String> courseWeaklyPlan;
+    @ElementCollection
+    @CollectionTable(name = "CourseWeeklyPlan", joinColumns = @JoinColumn(name = "courseId"))
+    @Column(name = "classTime")
+    List<String> courseWeaklyPlan = new ArrayList<>();
 
 
     @Column(name = "courseExamTime",nullable = false)
@@ -61,17 +63,23 @@ public class Course {
     @JoinColumn(name = "courseId")
     private List<Exercise> courseExercises = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "courseId")
+    @ManyToMany
+    @JoinTable(name = "Course_Prerequisite",
+            joinColumns = @JoinColumn(name = "courseId"),
+            inverseJoinColumns = @JoinColumn(name = "relatedCourseId"))
     private List<Course> coursePrerequisites = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "courseId")
+    @ManyToMany
+    @JoinTable(name = "Course_Corequisite",
+            joinColumns = @JoinColumn(name = "courseId"),
+            inverseJoinColumns = @JoinColumn(name = "relatedCourseId"))
     private List<Course> courseCorequisites = new ArrayList<>();
 
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "courseId")
+    @ManyToMany
+    @JoinTable(name = "Course_Group",
+            joinColumns = @JoinColumn(name = "courseId"),
+            inverseJoinColumns = @JoinColumn(name = "relatedCourseId"))
     private List<Course> courseGroup = new ArrayList<>();
 
 

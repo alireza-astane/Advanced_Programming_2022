@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.List;
 
 @Entity
-@Table(name="user")
+@Table(name="portal_user")
 public class User{
     @Id
     @GeneratedValue
@@ -23,7 +23,7 @@ public class User{
     @OneToOne(mappedBy = "user")
     private Master master;
 
-    @Column(name="username",nullable = false)
+    @Column(name="username",nullable = false,unique = true)
     String username;
 
     @Column(name="userFullName",nullable = false)
@@ -57,7 +57,7 @@ public class User{
     String userNationalNumber="";
 
 
-    @ManyToMany(cascade = { CascadeType.ALL })
+    @ManyToMany
     @JoinTable(
             name = "User_Chat",
             joinColumns = { @JoinColumn(name = "id") },
@@ -66,12 +66,12 @@ public class User{
     List<Chat> userChats = new ArrayList<>();
 
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "userId")
+    @OneToMany
+    @JoinColumn(name = "responsibleUserId")
     private List<UniRequest> InUniRequests= new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "userId")
+    @OneToMany
+    @JoinColumn(name = "requesterUserId")
     private List<UniRequest> OutUniRequests= new ArrayList<>();
 
 

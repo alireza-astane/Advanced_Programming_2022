@@ -33,10 +33,10 @@ public class Score {
     @Column(name="Units",nullable = false)
     int units;
 
-    @Column(name = "ScoreProtestation")
+    @Column(name = "ScoreProtestation",length = 4000)
     String scoreProtestation="";
 
-    @Column(name = "scoreProtestationAnswer")
+    @Column(name = "scoreProtestationAnswer",length = 4000)
     String scoreProtestationAnswer="";
 
     public int getScoreId() {

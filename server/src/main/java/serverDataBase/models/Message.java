@@ -21,7 +21,7 @@ public class Message {
     @Enumerated(EnumType.ORDINAL)
     MessageType messageType;
 
-    @Column(name = "messageContext")
+    @Column(name = "messageContext",length = 4000)
     String messageContent="";
 
     @Column(name = "messageTime")

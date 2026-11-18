@@ -26,7 +26,7 @@ public class Chat {
     @ManyToMany(mappedBy = "userChats")
     private List<User> chatUsers = new ArrayList<>();
 
-    @Column(name = "lastMessage")
+    @Column(name = "lastMessage",length = 4000)
     String lastMessage;
 
     public int getChatId() {

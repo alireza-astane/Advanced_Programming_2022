@@ -35,7 +35,7 @@ public class EducationalContext {
     @Column(name = "educationalContextFile")
     byte[] educationalContextFile;
 
-    @Column(name ="educationalContextText")
+    @Column(name ="educationalContextText",length = 4000)
     String educationalContextText="";
 
     public int getEducationalContextId() {

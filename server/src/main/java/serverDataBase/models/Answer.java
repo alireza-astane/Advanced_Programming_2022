@@ -91,6 +91,6 @@ public class Answer {
     @Column(name =  "answerFile")
     byte[] answerFile;
 
-    @Column(name = "answerText")
+    @Column(name = "answerText",length = 4000)
     String answerText;
 }

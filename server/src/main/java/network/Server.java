@@ -3,66 +3,94 @@ package network;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import serverDataBase.DataManager;
-import serverDataBase.models.User;
+import serverDataBase.DemoData;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.util.HashMap;
+import java.util.HexFormat;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
     static Logger log = LogManager.getLogger(Server.class);
-    public static Server server;
-    public ServerSocket serverSocket;
-    public static Server getInstance() {
-        if (server == null)
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static Server server;
+
+    private final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
+    private ServerSocket serverSocket;
+    private DatabaseConnectionChecker databaseConnectionChecker;
+
+    public static synchronized Server getInstance() {
+        if (server == null) {
             server = new Server();
+        }
         return server;
     }
-    DatabaseConnectionChecker databaseConnectionChecker;
 
-    HashMap<String,String> usernameAndPassMap;
-
-    public void init() {
-        log.info("Server started...");
+    public void start(int port) throws IOException {
+        log.info("Server started");
         DataManager.connect();
-        DataManager.load();
-        databaseConnectionChecker =  new DatabaseConnectionChecker();
+        DemoData.loadIfEmpty();
+        databaseConnectionChecker = new DatabaseConnectionChecker(this);
         databaseConnectionChecker.start();
-        loadUsernamesAndPasses();
-        log.info("server has been initialized");
-        try {
-            Server.getInstance().serverSocket = new ServerSocket(8080);
-            while (true) {
-                log.info("Server waiting for new connection");
+        serverSocket = new ServerSocket(port);
+        log.info("Listening on port " + serverSocket.getLocalPort());
+    }
+
+    public int getPort() {
+        return serverSocket.getLocalPort();
+    }
+
+    public void acceptClients() {
+        while (!serverSocket.isClosed()) {
+            try {
                 Socket socket = serverSocket.accept();
-                initClient(socket);
+                ClientHandler clientHandler = new ClientHandler(socket, authTokenGenerator());
+                clients.add(clientHandler);
+                clientHandler.start();
+                log.info("Client " + clientHandler.getId() + " connected");
+            } catch (IOException e) {
+                if (!serverSocket.isClosed()) {
+                    log.error("Could not accept a client", e);
+                }
             }
-
-        } catch (IOException | NoSuchAlgorithmException | NoSuchProviderException e) {
-            e.printStackTrace();
         }
     }
 
-    private void loadUsernamesAndPasses() {
-        usernameAndPassMap = new HashMap<>();
-        for(User user:DataManager.getUsers()){
-            usernameAndPassMap.put(user.getUsername(),user.getUserPassword());
+    void removeClient(ClientHandler clientHandler) {
+        clients.remove(clientHandler);
+    }
+
+    Set<ClientHandler> clients() {
+        return clients;
+    }
+
+    public void stop() {
+        try {
+            if (databaseConnectionChecker != null) {
+                databaseConnectionChecker.interrupt();
+            }
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            log.warn("Could not close the server socket", e);
         }
+        clients.forEach(ClientHandler::close);
     }
 
-    private void initClient(Socket socket) throws NoSuchAlgorithmException, NoSuchProviderException, IOException {
-        log.info("new client accepted");
-        int TOKEN = this.authTokenGenerator();
-        ClientHandler clientHandler = new ClientHandler(socket,TOKEN);
-        clientHandler.start();
+    /** Tells every client the database is gone. Clients then fall back to offline mode. */
+    void databaseLost() {
+        log.error("Database connection lost. Disconnecting clients.");
+        clients.forEach(client -> client.responser.sendError("The server lost its database connection."));
+        stop();
     }
 
-    public int authTokenGenerator() throws NoSuchAlgorithmException, NoSuchProviderException {
-        SecureRandom secureRandomGenerator = SecureRandom.getInstance("SHA1PRNG", "SUN");
-        return secureRandomGenerator.nextInt();
+    public static String authTokenGenerator() {
+        byte[] token = new byte[32];
+        RANDOM.nextBytes(token);
+        return HexFormat.of().formatHex(token);
     }
 }
-

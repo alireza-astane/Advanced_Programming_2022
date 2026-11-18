@@ -1,127 +1,83 @@
 package network;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import logic.Configuration;
-import logic.enums.*;
+import logic.enums.ResponseType;
+import logic.pageBuilders.*;
 import logic.pageDataClasses.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import serverDataBase.DataManager;
+import serverDataBase.models.User;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
 
 public class Responser {
 
     static Logger log = LogManager.getLogger(Responser.class);
-    PrintWriter printWriter;
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    Gson gson = gsonBuilder.create();
-    Socket socket;
-    int authToken;
-    ClientHandler clientHandler;
-
+    private final PrintWriter printWriter;
+    private final ClientHandler clientHandler;
 
     public Responser(ClientHandler clientHandler) throws IOException {
-        this.clientHandler=clientHandler;
-        this.socket=clientHandler.socket;
-        printWriter = new PrintWriter(socket.getOutputStream());
-        this.authToken= clientHandler.authToken;
+        this.clientHandler = clientHandler;
+        printWriter = new PrintWriter(new OutputStreamWriter(
+                clientHandler.socket.getOutputStream(), StandardCharsets.UTF_8));
     }
-    public void sendResponse(Response response){
-        log.info("Response "+response.getResponseType()+" sent to client "+clientHandler.getId());
-        printWriter.println(gson.toJson(response));
+
+    public synchronized void sendResponse(Response response) {
+        log.debug("Response " + response.getResponseType() + " sent to client " + clientHandler.getId());
+        printWriter.print(Protocol.GSON.toJson(response));
+        printWriter.print('\n');
         printWriter.flush();
     }
 
-    public byte[] file2Bytes(String path) throws IOException {
-        return Files.readAllBytes(Paths.get(path));
+    public void sendError(String message) {
+        sendResponse(new ErrorData(message));
     }
 
-    public File bytes2File(byte[] bytes){
-        return null;
+    public void sendAuthToken(String authToken) {
+        sendResponse(new AuthToken(authToken));
     }
 
-
-    public void sendAuthToken(int authToken){
-        AuthToken authToken1 = new AuthToken(authToken);
-        sendResponse(authToken1);
+    public void sendLoginData() {
+        sendResponse(LoginDataBuilder.getLoginData(clientHandler));
     }
 
-
-    public void sendLoginData() throws IOException {
-        LoginData loginData = LoginData.getLoginData(clientHandler);
-        sendResponse(loginData);
-    }
-
-    public void sendLoginResult(ArrayList<String> arrayList) throws IOException {
-        LoginData loginData = new LoginData();
-
-        String username = arrayList.get(0);
-        String pass = arrayList.get(1);
-        String captcha = arrayList.get(2);
-        if(!Server.getInstance().usernameAndPassMap.containsKey(username))
-            loginData.setResult("No such username");
-        else{
-            if(Server.getInstance().usernameAndPassMap.get(username)==pass)
-            {loginData.setResult("Wrong password");
-                System.out.println(Server.getInstance().usernameAndPassMap.get(username)+" "+ pass);}
-            else{
-                if(!(Objects.equals(captcha, clientHandler.captchaCode)))
-                    loginData.setResult("Wrong captcha code");
-                else {
-                    clientHandler.setUser(DataManager.getUserByUserName(username));
-                    if(!DataManager.getUserByUserName(username).isCanLogin())
-                        loginData.setResult("You cant login");
-                    else{
-                        Duration duration = Duration.between(clientHandler.getUser().getUserLastLoginTime(),LocalDateTime.now());
-                        System.out.println(duration.toHours());
-                        if(duration.toHours()> Integer.parseInt((String) Configuration.logics.get("loginTimeDifference"))){
-                            loginData.setResult("ChangePass");
-                        }
-                        else {
-                            switch (clientHandler.getUser().getUserType()){
-                                case ASSISTANT -> {
-                                    loginData.setResult("AssistantMenu");
-                                    DataManager.setLastloginTime(clientHandler);
-                                }
-                                case MASTER -> {
-                                    loginData.setResult("MasterMenu");
-                                    DataManager.setLastloginTime(clientHandler);
-                                }
-                                case STUDENT -> {
-                                    loginData.setResult("StudentMenu");
-                                    DataManager.setLastloginTime(clientHandler);
-                                }
-                                case ADMIN -> {
-                                    loginData.setResult("AdminMenu");
-                                    DataManager.setLastloginTime(clientHandler);
-                                }
-                                case MOHSENI -> {
-                                    loginData.setResult("MohseniMenu");
-                                    DataManager.setLastloginTime(clientHandler);
-                                }
-                                default -> loginData.setResult("ChangePass");
-                            }
-                        }
-                    }
-
-                }
+    public void sendLoginResult(ArrayList<String> arrayList) {
+        LoginData loginData = LoginDataBuilder.getLoginData(clientHandler, arrayList.get(2));
+        if (loginData.getResult() == null) {
+            User user = DataManager.getUserByUserName(arrayList.get(0));
+            if (user == null || !Passwords.matches(arrayList.get(1), user.getUserPassword())) {
+                loginData.setResult("Wrong username or password");
+            } else if (!user.isCanLogin()) {
+                loginData.setResult("This account cannot log in");
+            } else {
+                loginData.setResult(logIn(user));
             }
-
         }
-        List<CaptchaImages> ImageList = Arrays.asList(CaptchaImages.A,CaptchaImages.B,CaptchaImages.C,CaptchaImages.D,CaptchaImages.E);
-        Random rand = new Random();
-        CaptchaImages RImage = ImageList.get(rand.nextInt(ImageList.size()));
-        clientHandler.captchaCode = RImage.code;
-        loginData.setCaptchaImageFile(file2Bytes(RImage.path));
         sendResponse(loginData);
+    }
+
+    private String logIn(User user) {
+        clientHandler.setUser(user);
+        long hours = Duration.between(user.getUserLastLoginTime(), LocalDateTime.now()).toHours();
+        if (hours > Integer.parseInt(Configuration.logics.getProperty("loginTimeDifference"))) {
+            clientHandler.setMustChangePassword(true);
+            return "ChangePass";
+        }
+        DataManager.setLastloginTime(user.getId());
+        return switch (user.getUserType()) {
+            case ASSISTANT -> "AssistantMenu";
+            case MASTER -> "MasterMenu";
+            case STUDENT -> "StudentMenu";
+            case ADMIN -> "AdminMenu";
+            case MOHSENI -> "MohseniMenu";
+        };
     }
 
 
@@ -138,17 +94,17 @@ public class Responser {
     }
 
     public  void sendStudentMenuData(){
-        MainMenuData mainMenuData = MainMenuData.getStudentMainMenuData(clientHandler);
+        MainMenuData mainMenuData = MainMenuDataBuilder.getStudentMainMenuData(clientHandler);
         sendResponse(mainMenuData);
     }
 
     public void sendMasterMenuData(){
-        MainMenuData mainMenuData = MainMenuData.getMasterMainMenuData(clientHandler);
+        MainMenuData mainMenuData = MainMenuDataBuilder.getMasterMainMenuData(clientHandler);
         sendResponse(mainMenuData);
     }
 
     public void sendAssistantMenuData(){
-        MainMenuData mainMenuData = MainMenuData.getAssistantMainMenuData(clientHandler);
+        MainMenuData mainMenuData = MainMenuDataBuilder.getAssistantMainMenuData(clientHandler);
         sendResponse(mainMenuData);
     }
 
@@ -165,12 +121,12 @@ public class Responser {
     }
 
     public void sendWeeklyPlanData(){
-        WeeklyPlanData weeklyPlanData = WeeklyPlanData.getWeeklyPlanData(clientHandler);
+        WeeklyPlanData weeklyPlanData = WeeklyPlanDataBuilder.getWeeklyPlanData(clientHandler);
         sendResponse(weeklyPlanData);
     }
 
     public void sendExamsListData(){
-        ExamsListData examsListData = ExamsListData.getExamsListData(clientHandler);
+        ExamsListData examsListData = ExamsListDataBuilder.getExamsListData(clientHandler);
 
         sendResponse(examsListData);
     }
@@ -234,37 +190,37 @@ public class Responser {
     }
 
     public void sendChatData(int chatId){
-        ChatData chatData = ChatData.getChatData(clientHandler,chatId);
+        ChatData chatData = ChatDataBuilder.getChatData(clientHandler,chatId);
         sendResponse(chatData);
     }
 
     public void sendMessengerMenuData(){
-        MessengerData messengerData = MessengerData.getMessengerMenuData(clientHandler);
+        MessengerData messengerData = MessengerDataBuilder.getMessengerMenuData(clientHandler);
         sendResponse(messengerData);
     }
 
     public void sendCWMenuData(){
-        CWMenuData cwMenuData = CWMenuData.getCwMenuData(clientHandler);
+        CWMenuData cwMenuData = CWMenuDataBuilder.getCwMenuData(clientHandler);
         sendResponse(cwMenuData);
     }
 
     public void sendCWCourseData(int courseId){
-        CWCoursePageData cwCoursePageData = CWCoursePageData.getCWCourseData(courseId);
+        CWCoursePageData cwCoursePageData = CWCoursePageDataBuilder.getCWCourseData(courseId);
         sendResponse(cwCoursePageData);
     }
 
     public void sendMasterProfileData(){
-        ProfileData profileData = ProfileData.getMasterProfileData(clientHandler);
+        ProfileData profileData = ProfileDataBuilder.getMasterProfileData(clientHandler);
         sendResponse(profileData);
     }
 
     public void sendGeneralProfileData(){
-        ProfileData profileData = ProfileData.getGeneralProfileData(clientHandler);
+        ProfileData profileData = ProfileDataBuilder.getGeneralProfileData(clientHandler);
         sendResponse(profileData);
     }
 
     public void sendStudentProfileData(){
-        ProfileData profileData = ProfileData.getStudentProfileData(clientHandler);
+        ProfileData profileData = ProfileDataBuilder.getStudentProfileData(clientHandler);
         sendResponse(profileData);
     }
 
@@ -275,61 +231,61 @@ public class Responser {
     }
 
     public void senCWEducationalContextData(int cwEducationalContextId){
-        CWEducationalContextData cwEducationalContextData = CWEducationalContextData.getCWEducationalContextData(cwEducationalContextId);
+        CWEducationalContextData cwEducationalContextData = CWEducationalContextDataBuilder.getCWEducationalContextData(cwEducationalContextId);
         sendResponse(cwEducationalContextData);
     }
 
     public void sendAddChatData(){
-        AddChatData addChatData = AddChatData.getAddChatData(clientHandler);
+        AddChatData addChatData = AddChatDataBuilder.getAddChatData(clientHandler);
         sendResponse(addChatData);
     }
 
     public void sendMohseniStudentInfoData(String studentUserId){
-        MohseniStudentInfoData mohseniStudentInfoData = MohseniStudentInfoData.getMohseniStudentInfoData(Integer.parseInt(studentUserId));
+        MohseniStudentInfoData mohseniStudentInfoData = MohseniStudentInfoDataBuilder.getMohseniStudentInfoData(Integer.parseInt(studentUserId));
         sendResponse(mohseniStudentInfoData);
     }
 
     public void sendUniRequestsData(){
-        UniRequestsData uniRequestsData = UniRequestsData.getUniRequestData(clientHandler);
+        UniRequestsData uniRequestsData = UniRequestsDataBuilder.getUniRequestData(clientHandler);
         sendResponse(uniRequestsData);
     }
 
     public void sendStudentTemporaryScores(){
-        StudentTemporaryScoreData studentTemporaryScoreData= StudentTemporaryScoreData.getStudentTemporaryScoreData(clientHandler);
+        StudentTemporaryScoreData studentTemporaryScoreData= StudentTemporaryScoreDataBuilder.getStudentTemporaryScoreData(clientHandler);
         sendResponse(studentTemporaryScoreData);
     }
 
 
 
     public void sendStudentGeneralCalenderData(){
-        GeneralCalenderData generalCalenderData = GeneralCalenderData.getStudentGeneralCalenderData(clientHandler);
+        GeneralCalenderData generalCalenderData = GeneralCalenderDataBuilder.getStudentGeneralCalenderData(clientHandler);
         sendResponse(generalCalenderData);
     }
 
     public void sendMasterGeneralCalenderData(){
-        GeneralCalenderData generalCalenderData = GeneralCalenderData.getMasterGeneralCalenderData(clientHandler);
+        GeneralCalenderData generalCalenderData = GeneralCalenderDataBuilder.getMasterGeneralCalenderData(clientHandler);
         sendResponse(generalCalenderData);
     }
 
 
 
     public void sendEditMasterData(int masterId){
-        EditMasterData editMasterData =EditMasterData.getEditMasterData(masterId);
+        EditMasterData editMasterData =EditMasterDataBuilder.getEditMasterData(masterId);
         sendResponse(editMasterData);
     }
 
     public void sendCWStudentExerciseData(int exerciseId){
-        CWStudentExerciseData cwStudentExerciseData =CWStudentExerciseData.getCWStudentExerciseData(clientHandler,exerciseId);
+        CWStudentExerciseData cwStudentExerciseData =CWStudentExerciseDataBuilder.getCWStudentExerciseData(clientHandler,exerciseId);
         sendResponse(cwStudentExerciseData);
     }
 
     public void sendEditCourseData(int courseId){
-        EditCourseData editCourseData = EditCourseData.getEditCourseData(courseId);
+        EditCourseData editCourseData = EditCourseDataBuilder.getEditCourseData(courseId);
         sendResponse(editCourseData);
 
     }
     public void sendCWMasterExerciseData(int exerciseId){
-        CWMasterExerciseData cwMasterExerciseData =CWMasterExerciseData.getCWMasterExerciseData(exerciseId);
+        CWMasterExerciseData cwMasterExerciseData =CWMasterExerciseDataBuilder.getCWMasterExerciseData(exerciseId);
         sendResponse(cwMasterExerciseData);
     }
 
@@ -341,53 +297,53 @@ public class Responser {
 
 
     public void sendMohseniStudentSearchData(String departmentId, String entryYear, String studentType){
-        MohseniStudentSearchData mohseniStudentSearchData = MohseniStudentSearchData.getMohseniStudentSearchData(departmentId,entryYear,studentType);
+        MohseniStudentSearchData mohseniStudentSearchData = MohseniStudentSearchDataBuilder.getMohseniStudentSearchData(departmentId,entryYear,studentType);
         sendResponse(mohseniStudentSearchData);
 
     }
 
     public void sendMasterTemporaryScores(Integer courseId){
-        MasterTemporaryScoreData masterTemporaryScoreData = MasterTemporaryScoreData.getMasterTemporaryScoreData(clientHandler,courseId);
+        MasterTemporaryScoreData masterTemporaryScoreData = MasterTemporaryScoreDataBuilder.getMasterTemporaryScoreData(clientHandler,courseId);
         sendResponse(masterTemporaryScoreData);
     }
 
     public void sendEducationalSituationToStudent(){
-        EducationalSituation educationalSituation = EducationalSituation.getEducationalSituationToStudent(clientHandler);
+        EducationalSituation educationalSituation = EducationalSituationBuilder.getEducationalSituationToStudent(clientHandler);
         sendResponse(educationalSituation);
     }
 
     public void sendEducationalSituationToAssistant(int studentId){ //name or studentShipNumber
         //TODO only his own department
-        EducationalSituation educationalSituation = EducationalSituation.getEducationalSituationToAssistant(studentId);
+        EducationalSituation educationalSituation = EducationalSituationBuilder.getEducationalSituationToAssistant(studentId);
         sendResponse(educationalSituation);
     }
 
 
     public void sendTATemporaryScores(String courseId,String masterId,String studentId){
         //TODO ONLY HIS OWN DEPARTMENT!!!!!!!!
-        AssistantTemporaryScoreData assistantTemporaryScoreData = AssistantTemporaryScoreData.getAssistantTemporaryScoreData(clientHandler,courseId,masterId,studentId);
+        AssistantTemporaryScoreData assistantTemporaryScoreData = AssistantTemporaryScoreDataBuilder.getAssistantTemporaryScoreData(clientHandler,courseId,masterId,studentId);
         sendResponse(assistantTemporaryScoreData);
     }
 
     public void sendMastersListData(String departmentId, String name, String masterGrade){
-        MasterListData masterListData = MasterListData.getMasterListData(departmentId,name,masterGrade);
+        MasterListData masterListData = MasterListDataBuilder.getMasterListData(departmentId,name,masterGrade);
         sendResponse(masterListData);
     }
 
     public void sendCoursesListData(String courseNumber,String unit,String departmentId){
-        CourseListData courseListData = CourseListData.getCourseListData(courseNumber,unit,departmentId);
+        CourseListData courseListData = CourseListDataBuilder.getCourseListData(courseNumber,unit,departmentId);
         sendResponse(courseListData);
     }
 
 
 
     public void sendSuggestedCoursesData(){
-        SuggestedCoursesData suggestedCoursesData = SuggestedCoursesData.getSuggestedCoursesData(clientHandler);
+        SuggestedCoursesData suggestedCoursesData = SuggestedCoursesDataBuilder.getSuggestedCoursesData(clientHandler);
         sendResponse(suggestedCoursesData);
     }
 
     public void sendOfflineData() {
-        OfflineData offlineData = OfflineData.getOfflineData(clientHandler);
+        OfflineData offlineData = OfflineDataBuilder.getOfflineData(clientHandler);
         sendResponse(offlineData);
     }
 }

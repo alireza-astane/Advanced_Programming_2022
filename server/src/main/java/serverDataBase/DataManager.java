@@ -1,987 +1,664 @@
 package serverDataBase;
+
 import logic.Configuration;
 import logic.enums.*;
-import network.ClientHandler;
+import network.Passwords;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.Transaction;
 import serverDataBase.models.*;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.function.Supplier;
 
+/**
+ * All database access. Each client request runs in one transaction on its own session,
+ * so entities stay attached while a page is built and a failed request changes nothing.
+ */
 public class DataManager {
-   //commit changes both in database and loaded data
-
     static Logger log = LogManager.getLogger(DataManager.class);
+    private static final String DEFAULT_URL = "jdbc:h2:file:./data/portal;DB_CLOSE_ON_EXIT=TRUE";
+    private static final ThreadLocal<Session> CURRENT = new ThreadLocal<>();
+    private static final Random RANDOM = new Random();
 
-  //  public static ArrayList<Answer> answers;
-  //  public static ArrayList<Chat> chats;
-  //  public static ArrayList<Course> courses;
-  //  public static ArrayList<Department> departments;
-
-  //  public static ArrayList<EducationalContext> educationalContexts;
-
-  //  public static ArrayList<Exercise> exercises;
-  //  public static ArrayList<Master> masters;
-
-  //  public static ArrayList<Message> messages;
-
-  //  public static ArrayList<Score> scores;
-  //  public static ArrayList<Student> students;
-  //  public static ArrayList<UniRequest> uniRequests;
-
-  //  public static  ArrayList<User> users;
-
-
-    public static Session session;
-
-
-
-    public static StandardServiceRegistry registry;
     public static SessionFactory sessionFactory;
 
-
-    //this class creates session and load on load function
-    //this class has save or update function for each
-    //? what about the relations?
-    //create a thread to check if database is still connected!
-    //dont forget to close
-
-    public static void connect(){
-        log.info("connecting to DataBase");
-        try{
-        registry = new StandardServiceRegistryBuilder().configure().build();
-        sessionFactory = new MetadataSources(registry).buildMetadata().buildSessionFactory();
-        log.info("Connected to DataBase");
-        } catch (HibernateException e) {
-            log.info("connection failed cause:"+e.getMessage());
+    public static void connect() {
+        log.info("Connecting to the database");
+        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration()
+                .setProperty("hibernate.connection.url",
+                        Configuration.setting("portal.db.url", "PORTAL_DB_URL", DEFAULT_URL))
+                .setProperty("hibernate.connection.username",
+                        Configuration.setting("portal.db.user", "PORTAL_DB_USER", "sa"))
+                .setProperty("hibernate.connection.password",
+                        Configuration.setting("portal.db.password", "PORTAL_DB_PASSWORD", ""))
+                .setProperty("hibernate.connection.pool_size", "10")
+                .setProperty("hibernate.hbm2ddl.auto", "update");
+        for (Class<?> model : List.of(User.class, Student.class, Master.class, Department.class, Course.class,
+                Score.class, UniRequest.class, Chat.class, Message.class, EducationalContext.class,
+                Exercise.class, Answer.class)) {
+            configuration.addAnnotatedClass(model);
         }
-
-    }
-    public static void load(){  //only in the beginning
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        //answers = (ArrayList<Answer>) session.createQuery("from Answer", Answer.class).list();
-        //chats = (ArrayList<Chat>) session.createQuery("from Chat", Chat.class).list();
-        //courses = (ArrayList<Course>) session.createQuery("from Course", Course.class).list();
-        //departments = (ArrayList<Department>) session.createQuery("from Department", Department.class).list();
-        //educationalContexts = (ArrayList<EducationalContext>) session.createQuery("from EducationalContext", EducationalContext.class).list();
-        //exercises = (ArrayList<Exercise>) session.createQuery("from Exercise", Exercise.class).list();
-        //masters = (ArrayList<Master>) session.createQuery("from Master", Master.class).list();
-        //messages = (ArrayList<Message>) session.createQuery("from Message", Message.class).list();
-        //scores = (ArrayList<Score>) session.createQuery("from Score", Score.class).list();
-        //students = (ArrayList<Student>) session.createQuery("from Student", Student.class).list();
-        //uniRequests = (ArrayList<UniRequest>) session.createQuery("from UniRequest", UniRequest.class).list();
-        //users = (ArrayList<User>) session.createQuery("from User", User.class).list();
-        log.info("Data loaded from Database");
-        session.close();
+        sessionFactory = configuration.buildSessionFactory();
+        log.info("Connected to the database");
     }
 
-    //SaveOrUpdate(obj);
-
-    public static void save(Object user){
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        //session.merge(user);
-        session.persist(user);  //saveOr
-       // users.removeIf(oldUser -> oldUser.getId() == user.getId());
-        //users.add(user);
-
+    public static void close() {
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
     }
 
-
-    public static List<User> getUsers(){
-        session = sessionFactory.openSession();
-        List<User> users = session.createQuery("from User", User.class).list();
-        session.close();
-        return users;
+    public static boolean isConnected() {
+        try {
+            return sessionFactory.isOpen() && read(() ->
+                    session().createNativeQuery("select 1", Integer.class).getSingleResult() == 1);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
+    public static void inTransaction(Runnable work) {
+        read(() -> {
+            work.run();
+            return null;
+        });
+    }
+
+    public static <T> T read(Supplier<T> work) {
+        if (CURRENT.get() != null) {
+            return work.get();
+        }
+        try (Session session = sessionFactory.openSession()) {
+            CURRENT.set(session);
+            Transaction transaction = session.beginTransaction();
+            try {
+                T result = work.get();
+                transaction.commit();
+                return result;
+            } catch (RuntimeException e) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw e;
+            }
+        } finally {
+            CURRENT.remove();
+        }
+    }
+
+    public static Session session() {
+        Session session = CURRENT.get();
+        if (session == null) {
+            throw new IllegalStateException("No transaction is open");
+        }
+        return session;
+    }
+
+    private static <T> T required(T value, String what) {
+        if (value == null) {
+            throw new IllegalArgumentException("No such " + what);
+        }
+        return value;
+    }
 
     public static User getUserById(int id) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        log.info("Got user By id:"+id);
-        User user =  session.find(User.class,id);
-        session.close();
-        return user;
+        return session().find(User.class, id);
     }
 
-    public static Chat getChatById(int chatId) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Chat chat =  session.find(Chat.class,chatId);
-        session.close();
-        log.info("Got Chat By id:"+chatId);
-        return chat;
-
+    public static Chat getChatById(int id) {
+        return session().find(Chat.class, id);
     }
 
-    public static Department getDepartmentById(int departmentId){
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Department department = session.find(Department.class,departmentId);
-        session.close();
-        log.info("Got Department By id:"+departmentId);
-        return department;
-
+    public static Department getDepartmentById(int id) {
+        return session().find(Department.class, id);
     }
 
-    public  static Course getCourseById(int courseId){
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Course course = session.find(Course.class,courseId);
-        log.info("Got Course By id:"+courseId);
-        session.close();
-        return course;
-
+    public static Course getCourseById(int id) {
+        return session().find(Course.class, id);
     }
 
-    public static EducationalContext getEducationalContextById(int cwEducationalContextId) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        EducationalContext educationalContext = session.find(EducationalContext.class,cwEducationalContextId);
-        session.close();
-        log.info("Got EducationalContext By id:"+cwEducationalContextId);
-        return educationalContext;
+    public static EducationalContext getEducationalContextById(int id) {
+        return session().find(EducationalContext.class, id);
     }
 
-
-    public static Exercise getExerciseById(int exerciseId) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Exercise exercise = session.find(Exercise.class,exerciseId);
-        log.info("Got Exercise By id:"+exerciseId);
-        session.close();
-        return exercise;
+    public static Exercise getExerciseById(int id) {
+        return session().find(Exercise.class, id);
     }
 
-    public static void deleteMaster(String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Master master = session.find(Master.class,s);
-        session.remove(master);
-        //masters.remove(master);
-        session.getTransaction().commit();
-        
-        session.clear();
+    public static Answer getAnswerById(int id) {
+        return session().find(Answer.class, id);
     }
 
-    public static void deleteCourse(String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Course course = session.find(Course.class,s);
-        session.remove(course);
-        //courses.remove(course);
-        session.getTransaction().commit();
-        
-        session.clear();
+    public static Score getScoreById(int id) {
+        return session().find(Score.class, id);
     }
 
-    public static void addRecommendationRequest(int id, ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-
-
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.RECOMMENDATION);
-        uniRequest.setUniRequestResult(UniRequestResultType.NOT_ANSWERED);
-        uniRequest.setUniRequestResponsibleId(Integer.parseInt(arrayList.get(0)));
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-        User user2 = session.find(User.class,uniRequest.getUniRequesterId());
-        ArrayList<UniRequest> arrayList2 = (ArrayList<UniRequest>) user2.getInUniRequests();
-        arrayList2.add(uniRequest);
-        user2.setInUniRequests(arrayList1);
-        session.merge(user2);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
+    public static UniRequest getUniRequestById(int id) {
+        return session().find(UniRequest.class, id);
     }
 
-    public static void addEnrollmentRequest(int id) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.ENROLLMENT);
-        uniRequest.setUniRequestResult(UniRequestResultType.ACCEPTED);
-        String context = (String) Configuration.labels.get("Enrollment");
-        context = context.replace("@1",getUserById(id).getUserFullName());
-        context = context.replace("@3",getDepartmentById(getUserById(id).getStudent().getStudentDepartmentId()).getDepartmentType().name);
-        context = context.replace("@2",getUserById(id).getStudent().getStudentshipNumber());
-        context =context.replace("@4",LocalDateTime.now().plusYears(1).toString());
-        uniRequest.setUniRequestContext(context);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-
-    }
-
-    public static void addMinorRequest(int id, ArrayList<String> arrayList) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.MINOR);
-        uniRequest.setUniRequestResult(UniRequestResultType.NOT_ANSWERED);
-        uniRequest.setUniRequestResponsibleId(getDepartmentById(getUserById(id).getStudent().getStudentDepartmentId()).getDepartmentAssistantId());
-        String context = (String) Configuration.labels.get("MinorRequest");
-        context = context.replace("@1",getUserById(id).getUserFullName());
-        context = context.replace("@2",getUserById(id).getStudent().getStudentshipNumber());
-        context = context.replace("@3",getDepartmentById(Integer.parseInt(arrayList.get(0))).getDepartmentType().name);
-        uniRequest.setUniRequestContext(context);
-
-        //TODO should be answered by both
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        User user2 = session.find(User.class,uniRequest.getUniRequesterId());
-        ArrayList<UniRequest> arrayList2 = (ArrayList<UniRequest>) user2.getInUniRequests();
-        arrayList2.add(uniRequest);
-        user2.setInUniRequests(arrayList1);
-        session.merge(user2);
-
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addWithdrawRequest(int id) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.WITHDRAWAL);
-        uniRequest.setUniRequestResult(UniRequestResultType.NOT_ANSWERED);
-        uniRequest.setUniRequestResponsibleId(getDepartmentById(getUserById(id).getStudent().getStudentDepartmentId()).getDepartmentAssistantId());
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        User user2 = session.find(User.class,uniRequest.getUniRequesterId());
-        ArrayList<UniRequest> arrayList2 = (ArrayList<UniRequest>) user2.getInUniRequests();
-        arrayList2.add(uniRequest);
-        user2.setInUniRequests(arrayList1);
-        session.merge(user2);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addDormitoryRequest(int id) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.DORMITORY);
-        Random random = new Random();
-        if(random.nextInt()>0){
-            uniRequest.setUniRequestResult(UniRequestResultType.ACCEPTED);
-        }
-        else uniRequest.setUniRequestResult(UniRequestResultType.REJECTED);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addDDDRequest(int id) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.DOCTORAL_DISSERTATION_DEFENSE);
-        uniRequest.setUniRequestContext("you can defend on "+LocalDateTime.now().plusDays(1));  //add config.
-        uniRequest.setUniRequestResult(UniRequestResultType.ACCEPTED);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-
-    public static void AddOrEditCourse(String departmentId,ArrayList<String> arrayList) {
-
-        //public void requestAddCourse(String courseName, String courseNumber,
-        //        String courseMasterId, ArrayList<String> courseWeaklyPlan, String courseExamTime,
-          //      String courseCapacity, String courseType, String courseUnits, String coursePrerequisiteId, String courseCorequisiteId){
-
-
-
-        Course course = new Course();
-        course.setCourseUnits(Integer.parseInt(arrayList.get(7)));
-        course.setCourseType(CourseType.valueOf(arrayList.get(6)));
-        course.setCourseNumber(arrayList.get(1));
-        course.setCourseDepartmentId(Integer.parseInt(departmentId));
-        course.setCourseMasterId(Integer.parseInt(arrayList.get(2)));
-        LocalDateTime localDateTime = LocalDateTime.now();
-        //course.setTerm(String.valueOf(localDateTime.getYear());
-        //course.setCourseTAs();
-       // course.setCourseExamTime(LocalDateTime.parse(arrayList.get(4)));
-        //course.setCourseCorequisites();
-        //course.setCoursePrerequisites();
-       // course.setCourseCapacity(Integer.parseInt(arrayList.get(5)));
-        //course.setCourseWeaklyPlan();   //todo
-        //course.setCourseGroup();
-        course.setCourseName(arrayList.get(0));
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-
-        Department department = getDepartmentById(Integer.parseInt(departmentId));
-        if(!department.getDepartmentCourses().contains(course)) {
-            List<Course> list = department.getDepartmentCourses();
-            list.add(course);
-            department.setDepartmentCourses(list);
-            session.merge(department);
-        }
-
-
-
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addOrEditMaster(String departmentId,ArrayList<String> arrayList, byte[] fileInByte) {
-        //String masterType, String masterGrade, String masteryNumber, String masterRoomNumber, String masterDepartmentId,
-        ////        String username, String userFullName,
-        //byte[] userImage, String userEmail, String userPhoneNumber, String userNationalNumber ,String pass
-        User masterUser = new User();
-        Master master = new Master();
-        master.setMasterDepartmentId(Integer.parseInt(departmentId));
-        master.setMasterGrade(MasterGrade.valueOf(arrayList.get(1)));
-        master.setMasterType(MasterType.valueOf(arrayList.get(0)));
-        master.setMasterShipNumber(arrayList.get(2));
-        master.setMasterRoomNumber(arrayList.get(3));
-        master.setUser(masterUser);
-
-        masterUser.setMaster(master);
-        masterUser.setUserType(UserType.MASTER);
-        masterUser.setUserEmail(arrayList.get(6));
-        masterUser.setUserPassword(arrayList.get(9));
-        masterUser.setUsername(arrayList.get(4));
-        masterUser.setUserPhoneNumber(arrayList.get(7));
-        masterUser.setUserNationalNumber(arrayList.get(8));
-        masterUser.setUserLastLoginTime(LocalDateTime.now());
-        masterUser.setUserFullName(arrayList.get(5));
-        masterUser.setCanLogin(true);
-        masterUser.setUserImage(fileInByte);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        Department department = getDepartmentById(Integer.parseInt(departmentId));
-        if(!department.getDepartmentCourses().contains(master)) {
-            List<Master> list = department.getDepartmentMasters();
-            list.add(master);
-            department.setDepartmentMasters(list);
-            session.merge(department);
-        }
-
-        session.merge(master);
-        session.merge(masterUser);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addMessage(int id, ArrayList<String> arrayList, byte[] fileInByte) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        Message message = new Message();
-        message.setMessageContent(arrayList.get(1));
-        message.setMessageChatId(Integer.parseInt(arrayList.get(0)));
-        message.setMessageTime(LocalDateTime.now());
-        message.setMessageSenderId(id);
-        if(fileInByte!=null){
-            message.setMessageType(MessageType.FILE);
-            message.setMessageFile(fileInByte);
-        }
-        else{
-            message.setMessageType(MessageType.TEXT);
-        }
-
-        Chat chat = session.find(Chat.class,arrayList.get(0));
-        ArrayList<Message> arrayList1 = new ArrayList<>(chat.getMessages());
-        arrayList1.add(message);
-        chat.setMessages(arrayList1);
-        chat.setLastMessage(message.getMessageContent());
-        chat.setLastMessageTime(message.getMessageTime());
-
-        session.persist(message);
-        session.merge(chat);           //TODO merge it
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addCreateChatRequest(int id, String s) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.CREATE_CHAT);
-        uniRequest.setUniRequestContext("wanna chat?");  //add config.
-        uniRequest.setUniRequestResult(UniRequestResultType.NOT_ANSWERED);
-
-        for(Master master:session.createQuery("from Master", Master.class).list()){
-            if(Objects.equals(master.getMasterShipNumber(), s)) uniRequest.setUniRequestResponsibleId(master.getId());
-        }
-        for(Student student:session.createQuery("from Student", Student.class).list()){
-            if(Objects.equals(student.getStudentshipNumber(), s)) uniRequest.setUniRequestResponsibleId(student.getId());
-        }
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        User user2 = session.find(User.class,uniRequest.getUniRequesterId());
-        ArrayList<UniRequest> arrayList2 = (ArrayList<UniRequest>) user2.getInUniRequests();
-        arrayList2.add(uniRequest);
-        user2.setInUniRequests(arrayList1);
-        session.merge(user2);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void requestUnitSelectionFromAssistant(int id, String s) {
-        UniRequest uniRequest = new UniRequest();
-        uniRequest.setUniRequesterId(id);
-        uniRequest.setUniRequestTime(LocalDateTime.now().toString());
-        uniRequest.setUniRequestType(UniRequestType.UNITSELCTION);
-        uniRequest.setUniRequestContext(s);  ///todo
-        uniRequest.setUniRequestResult(UniRequestResultType.NOT_ANSWERED);
-        uniRequest.setUniRequestResponsibleId(getDepartmentById(getUserById(id).getStudent().getStudentDepartmentId()).getDepartmentAssistantId());
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user1 = session.find(User.class,id);
-        ArrayList<UniRequest> arrayList1 = (ArrayList<UniRequest>) user1.getOutUniRequests();
-        arrayList1.add(uniRequest);
-        user1.setOutUniRequests(arrayList1);
-        session.merge(user1);
-
-
-        User user2 = session.find(User.class,uniRequest.getUniRequesterId());
-        ArrayList<UniRequest> arrayList2 = (ArrayList<UniRequest>) user2.getInUniRequests();
-        arrayList2.add(uniRequest);
-        user2.setInUniRequests(arrayList1);
-        session.merge(user2);
-
-
-        session.persist(uniRequest);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addExercise(ArrayList<String> arrayList, byte[] fileInByte) {
-        Exercise exercise = new Exercise();
-        exercise.setExerciseCourseId(Integer.parseInt(arrayList.get(0)));
-        exercise.setExerciseName(arrayList.get(1));
-        exercise.setExerciseStartTime(LocalDateTime.parse(arrayList.get(2)));
-        exercise.setExerciseEndTime(LocalDateTime.parse(arrayList.get(3)));
-        exercise.setExerciseDeadline(LocalDateTime.parse(arrayList.get(4)));
-        exercise.setExplanation(arrayList.get(5));
-        //exercise.setAnswerType(arrayList.get(6));  //todo
-        exercise.setExerciseFile(fileInByte);
-
-
-        Course course = getCourseById(exercise.getExerciseCourseId());
-        List<Exercise> exercises = course.getCourseExercises();
-        exercises.add(exercise);
-        course.setCourseExercises(exercises);
-
-
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.persist(exercise);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addAnswer(ArrayList<String> arrayList, byte[] fileInByte) {
-        Answer answer = new Answer();
-        answer.setAnswerFile(fileInByte);
-        answer.setAnswerExerciseId(Integer.parseInt(arrayList.get(0)));
-        answer.setAnswerText(arrayList.get(1));
-
-
-        Exercise exercise = getExerciseById(answer.getAnswerExerciseId());
-        List<Answer> answers = exercise.getExerciseAnswers();
-        answers.add(answer);
-        exercise.setExerciseAnswers(answers);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.persist(answer);
-        session.merge(exercise);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addOrEditEducationContext(ArrayList<String> arrayList, byte[] fileInByte) {
-        EducationalContext educationalContext = new EducationalContext();
-        educationalContext.setEducationalContextName(arrayList.get(1));
-        educationalContext.setEducationalContextText(arrayList.get(2));
-        educationalContext.setEducationalContextFile(fileInByte);
-        educationalContext.setEducationalContextTime(LocalDateTime.now());
-
-        if(fileInByte!=null){
-            educationalContext.setEducationalContextType(EducationalContextType.FILE);
-        }
-        else educationalContext.setEducationalContextType(EducationalContextType.TEXT);
-        educationalContext.setEducationalContextCourseId(Integer.parseInt(arrayList.get(0)));
-
-
-        Course course = getCourseById(educationalContext.getEducationalContextCourseId());
-        List<EducationalContext> educationalContexts = course.getCourseEducationalContexts();
-        educationalContexts.add(educationalContext);
-        course.setCourseEducationalContexts(educationalContexts);
-
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.persist(educationalContext);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void setLastloginTime(ClientHandler clientHandler) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user = session.find(User.class,clientHandler.getUser().getId());
-        user.setUserLastLoginTime(LocalDateTime.now());
-
-        session.merge(user);
-        session.getTransaction().commit();
-        session.clear();
-        session.close();
-    }
-    public static void changeEmail(int id, String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user = session.find(User.class,id);
-        user.setUserEmail(s);
-
-        session.merge(user);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void changePhoneNumber(int id, String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user = session.find(User.class,id);
-        user.setUserPhoneNumber(s);
-
-        session.merge(user);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void changePass(int id, String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        User user = session.find(User.class,id);
-        user.setUserPassword(s);
-
-        session.merge(user);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void deleteEducationalContext(String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        EducationalContext educationalContext = session.find(EducationalContext.class,s);
-        session.remove(educationalContext);
-        session.createQuery("from EducationalContext", EducationalContext.class).list().remove(educationalContext);
-        session.getTransaction().commit();
-        
-        session.clear();
-    }
-
-    public static void addScorePortestation(ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        Score score = session.find(Score.class,arrayList.get(0));
-        score.setScoreProtestation(arrayList.get(1));
-
-        session.merge(score);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addScorePortestationAnswer(ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        Score score = session.find(Score.class,arrayList.get(0));
-        score.setScoreProtestationAnswer(arrayList.get(1));
-
-        session.merge(score);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-    public static void setScoreValue(ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        Score score = session.find(Score.class,arrayList.get(0));
-        double doube = Double.parseDouble(arrayList.get(1));
-        int integer = (int) Math.round(4*doube);
-        score.setScoreValue(integer/4);
-        score.setScoreType(ScoreType.TEMPORARY);
-
-        session.merge(score);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void verifyScores(ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Course course = session.find(Course.class,arrayList.get(0));
-        for(Score score:course.getScores()){
-            score.setScoreType(ScoreType.VERIFIED);
-            session.merge(score);
-
-        }
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-    public static void ScoreAnswer(String s, String s1) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Answer answer = session.find(Answer.class,s);
-        answer.setAnswerScore(Double.parseDouble(s1));
-
-        session.merge(answer);
-
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void answerUniRequest(ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-
-        UniRequest uniRequest = session.find(UniRequest.class,arrayList.get(0));
-        boolean result = Boolean.parseBoolean(arrayList.get(1));
-        if(result) {
-            if(uniRequest.getUniRequestType()==UniRequestType.MINOR){
-                uniRequest.getUniRequestResponsibleId() ;  //todo
-            }
-            uniRequest.setUniRequestResult(UniRequestResultType.ACCEPTED);
-        }
-        else uniRequest.setUniRequestResult(UniRequestResultType.REJECTED);
-
-
-        session.merge(uniRequest);
-
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-
-    }
-    public static void statOrDestarCourse(Student student, String s) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentSelectedCourse();
-        Course course = session.find(Course.class,s);
-        if(courseArrayList.contains(course)){
-            courseArrayList.remove(course);
-        } else if (!courseArrayList.contains(course)) courseArrayList.add(course);
-
-        student.setStudentSelectedCourse(courseArrayList);
-
-        session.merge(student);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void preRegisterCourse(Student student, String s) {
-        Course course = getCourseById(Integer.parseInt(s));
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentPreRegisteredCourses();
-        courseArrayList.add(course);
-        student.setStudentPreRegisteredCourses(courseArrayList);
-
-        ArrayList<Student> studentArrayList = (ArrayList<Student>) course.getCoursePreregisteredStudents();
-        studentArrayList.add(student);
-        course.setCoursePreregisteredStudents(studentArrayList);
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.merge(student);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void undoPreRegisterCourse(Student student, String s) {
-        Course course = getCourseById(Integer.parseInt(s));
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentPreRegisteredCourses();
-        courseArrayList.remove(course);
-        student.setStudentPreRegisteredCourses(courseArrayList);
-
-        ArrayList<Student> studentArrayList = (ArrayList<Student>) course.getCoursePreregisteredStudents();
-        studentArrayList.remove(student);
-        course.setCoursePreregisteredStudents(studentArrayList);
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.merge(student);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addTAToCourse(String s, String s1) {
-        Student student = null;
-        for(Student student1: session.createQuery("from Student", Student.class).list()){
-            if (Objects.equals(student1.getStudentshipNumber(), s1)) {student=student1;}
-        }
-        Course course = getCourseById(Integer.parseInt(s));
-        assert student != null;
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentAssistingCourses();
-        courseArrayList.add(course);
-        student.setStudentAssistingCourses(courseArrayList);
-
-        ArrayList<Student> studentArrayList = (ArrayList<Student>) course.getCourseTAs();
-        studentArrayList.add(student);
-        course.setCourseTAs(studentArrayList);
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.merge(student);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void addStudentToCourse(String s, String s1) {
-        Student student = null;
-        for(Student student1:session.createQuery("from Student", Student.class).list()){
-            if (Objects.equals(student1.getStudentshipNumber(), s1)) {student=student1;}
-        }
-        Course course = getCourseById(Integer.parseInt(s));
-        assert student != null;
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentCourses();
-        courseArrayList.add(course);
-        student.setStudentCourses(courseArrayList);
-
-        ArrayList<Student> studentArrayList = (ArrayList<Student>) course.getCourseStudents();
-        studentArrayList.add(student);
-        course.setCourseStudents(studentArrayList);
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.merge(student);
-        session.merge(course);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-    public static void changeGroup(String id,ArrayList<String> arrayList) {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        Student student = session.find(Student.class,id);
-        Course course1 = session.find(Course.class,arrayList.get(0));
-        Course course2 = session.find(Course.class,arrayList.get(1));
-
-        ArrayList<Course> courseArrayList = (ArrayList<Course>) student.getStudentCourses();
-        courseArrayList.remove(course1);
-        courseArrayList.add(course2);
-        student.setStudentCourses(courseArrayList);
-
-        ArrayList<Student> studentArrayList1 = (ArrayList<Student>) course1.getCourseStudents();
-        studentArrayList1.remove(student);
-        course1.setCourseStudents(studentArrayList1);
-
-
-        ArrayList<Student> studentArrayList2 = (ArrayList<Student>) course2.getCourseStudents();
-        studentArrayList2.add(student);
-        course2.setCourseStudents(studentArrayList2);
-
-        session.merge(student);
-        session.merge(course1);
-        session.merge(course2);
-        session.getTransaction().commit();
-        
-        session.clear();
-        session.close();
-    }
-
-
-    public static void setUnitSelectionTime(ArrayList<String> arrayList) {
+    public static List<User> getUsers() {
+        return all(User.class);
     }
 
     public static ArrayList<Course> getCourses() {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        List<Course> list = session.createQuery("from Course", Course.class).list();
-        session.clear();
-        session.close();
-        return (ArrayList<Course>) list;
+        return all(Course.class);
     }
 
-
     public static ArrayList<Master> getMasters() {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        List<Master> list = session.createQuery("from Master", Master.class).list();
-        session.clear();
-        session.close();
-        return (ArrayList<Master>) list;
+        return all(Master.class);
     }
 
     public static ArrayList<Student> getStudents() {
-        session = sessionFactory.openSession();
-        session.beginTransaction();
-        List<Student> list = session.createQuery("from Student", Student.class).list();
-        session.clear();
-        session.close();
-        return (ArrayList<Student>) list;
+        return all(Student.class);
     }
 
+    public static ArrayList<Department> getDepartments() {
+        return all(Department.class);
+    }
 
-    public static User getUserByUserName(String username){
-        for(User user:getUsers()){
-            if(Objects.equals(user.getUsername(), username)){
-                return user;
+    private static <T> ArrayList<T> all(Class<T> type) {
+        return new ArrayList<>(session().createQuery("from " + type.getSimpleName(), type).list());
+    }
+
+    public static User getUserByUserName(String username) {
+        return session().createQuery("from User where username = :username", User.class)
+                .setParameter("username", username).uniqueResult();
+    }
+
+    /** The courses a user attends or, for professors, teaches. */
+    public static List<Course> coursesOf(User user) {
+        if (user.getStudent() != null) {
+            return user.getStudent().getStudentCourses();
+        }
+        return user.getMaster() != null ? user.getMaster().getMasterCourses() : List.of();
+    }
+
+    private static Student studentByNumber(String number) {
+        return required(session().createQuery("from Student where studentshipNumber = :number", Student.class)
+                .setParameter("number", number).uniqueResult(), "student");
+    }
+
+    private static Student student(int id) {
+        return required(session().find(Student.class, id), "student");
+    }
+
+    private static Course course(int id) {
+        return required(getCourseById(id), "course");
+    }
+
+    private static Department departmentOf(Student student) {
+        return required(getDepartmentById(student.getStudentDepartmentId()), "department");
+    }
+
+    private static UniRequest addRequest(int requesterId, UniRequestType type, UniRequestResultType result,
+                                         String context, Integer responsibleId) {
+        UniRequest request = new UniRequest();
+        request.setUniRequesterId(requesterId);
+        request.setUniRequestTime(LocalDateTime.now().toString());
+        request.setUniRequestType(type);
+        request.setUniRequestResult(result);
+        request.setUniRequestContext(context);
+        session().persist(request);
+        getUserById(requesterId).getOutUniRequests().add(request);
+        if (responsibleId != null) {
+            request.setUniRequestResponsibleId(responsibleId);
+            required(getUserById(responsibleId), "user").getInUniRequests().add(request);
+        }
+        return request;
+    }
+
+    private static String label(String key, String... values) {
+        String text = Configuration.labels.getProperty(key);
+        for (int i = 0; i < values.length; i++) {
+            text = text.replace("@" + (i + 1), values[i]);
+        }
+        return text;
+    }
+
+    public static void addRecommendationRequest(int id, int masterId) {
+        User user = getUserById(id);
+        if (required(getUserById(masterId), "professor").getMaster() == null) {
+            throw new IllegalArgumentException("That user is not a professor");
+        }
+        addRequest(id, UniRequestType.RECOMMENDATION, UniRequestResultType.NOT_ANSWERED,
+                label("RecommendationRequest", user.getUserFullName(), user.getStudent().getStudentshipNumber()), masterId);
+    }
+
+    public static void addEnrollmentRequest(int id) {
+        User user = getUserById(id);
+        Student student = user.getStudent();
+        addRequest(id, UniRequestType.ENROLLMENT, UniRequestResultType.ACCEPTED,
+                label("Enrollment", user.getUserFullName(), student.getStudentshipNumber(),
+                        departmentOf(student).getDepartmentType().name,
+                        LocalDateTime.now().plusYears(1).toLocalDate().toString()), null);
+    }
+
+    public static void addMinorRequest(int id, int departmentId) {
+        User user = getUserById(id);
+        Student student = user.getStudent();
+        Department target = required(getDepartmentById(departmentId), "department");
+        addRequest(id, UniRequestType.MINOR, UniRequestResultType.NOT_ANSWERED,
+                label("MinorRequest", user.getUserFullName(), student.getStudentshipNumber(), target.getDepartmentType().name),
+                departmentOf(student).getDepartmentAssistantId());
+    }
+
+    public static void addWithdrawRequest(int id) {
+        User user = getUserById(id);
+        Student student = user.getStudent();
+        addRequest(id, UniRequestType.WITHDRAWAL, UniRequestResultType.NOT_ANSWERED,
+                label("WithDrawRequest", user.getUserFullName(), student.getStudentshipNumber()),
+                departmentOf(student).getDepartmentAssistantId());
+    }
+
+    public static void addDormitoryRequest(int id) {
+        boolean granted = RANDOM.nextBoolean();
+        addRequest(id, UniRequestType.DORMITORY,
+                granted ? UniRequestResultType.ACCEPTED : UniRequestResultType.REJECTED,
+                granted ? "A dormitory place was assigned." : "No dormitory place is available.", null);
+    }
+
+    public static void addDDDRequest(int id) {
+        addRequest(id, UniRequestType.DOCTORAL_DISSERTATION_DEFENSE, UniRequestResultType.ACCEPTED,
+                label("DDDRequest", LocalDateTime.now().plusMonths(1).toLocalDate().toString()), null);
+    }
+
+    public static void addCreateChatRequest(int id, String shipNumber) {
+        Integer target = session().createQuery(
+                        "select s.id from Student s where s.studentshipNumber = :number", Integer.class)
+                .setParameter("number", shipNumber).uniqueResult();
+        if (target == null) {
+            target = session().createQuery(
+                            "select m.id from Master m where m.masterShipNumber = :number", Integer.class)
+                    .setParameter("number", shipNumber).uniqueResult();
+        }
+        addRequest(id, UniRequestType.CREATE_CHAT, UniRequestResultType.NOT_ANSWERED,
+                getUserById(id).getUserFullName() + " would like to chat with you.", required(target, "user"));
+    }
+
+    public static void requestUnitSelectionFromAssistant(int id, int courseId) {
+        Student student = getUserById(id).getStudent();
+        addRequest(id, UniRequestType.UNITSELCTION, UniRequestResultType.NOT_ANSWERED,
+                String.valueOf(course(courseId).getCourseId()), departmentOf(student).getDepartmentAssistantId());
+    }
+
+    public static void answerUniRequest(int requestId, boolean accepted) {
+        UniRequest request = required(getUniRequestById(requestId), "request");
+        request.setUniRequestResult(accepted ? UniRequestResultType.ACCEPTED : UniRequestResultType.REJECTED);
+        if (!accepted) {
+            return;
+        }
+        int requester = request.getUniRequesterId();
+        switch (request.getUniRequestType()) {
+            case CREATE_CHAT -> chatBetween(requester, request.getUniRequestResponsibleId());
+            case WITHDRAWAL -> student(requester).setStudentState(StudentState.WITHDREW);
+            case UNITSELCTION -> addIfAbsent(student(requester).getStudentPreRegisteredCourses(),
+                    course(Integer.parseInt(request.getUniRequestContext())));
+            default -> {
             }
         }
-        return null;
     }
 
-    //TODO do log gor save delete and edits
+    private static <T> void addIfAbsent(List<T> list, T value) {
+        if (!list.contains(value)) {
+            list.add(value);
+        }
+    }
+
+    public static Chat chatBetween(int firstId, int secondId) {
+        User first = required(getUserById(firstId), "user");
+        User second = required(getUserById(secondId), "user");
+        for (Chat chat : first.getUserChats()) {
+            if (chat.getChatUsers().size() == 2 && chat.getChatUsers().contains(second)) {
+                return chat;
+            }
+        }
+        Chat chat = new Chat();
+        chat.setLastMessage("");
+        chat.setLastMessageTime(LocalDateTime.now());
+        chat.getChatUsers().add(first);
+        chat.getChatUsers().add(second);
+        session().persist(chat);
+        first.getUserChats().add(chat);
+        second.getUserChats().add(chat);
+        return chat;
+    }
+
+    public static void addMessage(int senderId, int chatId, String text, byte[] file) {
+        Chat chat = required(getChatById(chatId), "chat");
+        Message message = new Message();
+        message.setMessageContent(text);
+        message.setMessageChatId(chatId);
+        message.setMessageTime(LocalDateTime.now());
+        message.setMessageSenderId(senderId);
+        message.setMessageType(file != null ? MessageType.FILE : MessageType.TEXT);
+        message.setMessageFile(file);
+        session().persist(message);
+        chat.getMessages().add(message);
+        chat.setLastMessage(text);
+        chat.setLastMessageTime(message.getMessageTime());
+    }
+
+    public static void addMessageToAdmin(int senderId, String text) {
+        User admin = required(session().createQuery("from User where userType = :type order by id", User.class)
+                .setParameter("type", UserType.ADMIN).setMaxResults(1).uniqueResult(), "administrator");
+        addMessage(senderId, chatBetween(senderId, admin.getId()).getChatId(), text, null);
+    }
+
+    public static void addCourse(int departmentId, List<String> args) {
+        Course course = new Course();
+        course.setCourseDepartmentId(departmentId);
+        course.setTerm(Configuration.logics.getProperty("currentTerm"));
+        fillCourse(course, args.get(0), args.get(1), args.get(2), args.subList(3, args.size()));
+        session().persist(course);
+        required(getDepartmentById(departmentId), "department").getDepartmentCourses().add(course);
+        master(course.getCourseMasterId()).getMasterCourses().add(course);
+    }
+
+    public static void editCourse(List<String> args) {
+        Course course = course(Integer.parseInt(args.get(0)));
+        int oldMaster = course.getCourseMasterId();
+        fillCourse(course, args.get(1), args.get(2), args.get(4), args.subList(5, args.size()));
+        if (oldMaster != course.getCourseMasterId()) {
+            master(oldMaster).getMasterCourses().remove(course);
+            master(course.getCourseMasterId()).getMasterCourses().add(course);
+        }
+    }
+
+    /** {@code rest} holds plan, exam time, capacity, type, units, prerequisite and corequisite. */
+    private static void fillCourse(Course course, String name, String number, String masterId, List<String> rest) {
+        course.setCourseName(name);
+        course.setCourseNumber(number);
+        course.setCourseMasterId(master(Integer.parseInt(masterId)).getId());
+        course.setCourseWeaklyPlan(parseList(rest.get(0)));
+        course.setCourseExamTime(LocalDateTime.parse(rest.get(1)));
+        course.setCourseCapacity(Integer.parseInt(rest.get(2)));
+        course.setCourseType(CourseType.valueOf(rest.get(3)));
+        course.setCourseUnits(Integer.parseInt(rest.get(4)));
+        course.setCoursePrerequisites(courses(rest.get(5)));
+        course.setCourseCorequisites(courses(rest.get(6)));
+    }
+
+    private static Master master(int id) {
+        return required(session().find(Master.class, id), "professor");
+    }
+
+    private static ArrayList<String> parseList(String text) {
+        ArrayList<String> items = new ArrayList<>();
+        for (String item : text.replace("[", "").replace("]", "").split(",")) {
+            if (!item.isBlank()) {
+                items.add(item.trim());
+            }
+        }
+        return items;
+    }
+
+    private static ArrayList<Course> courses(String ids) {
+        ArrayList<Course> courses = new ArrayList<>();
+        for (String id : parseList(ids)) {
+            courses.add(course(Integer.parseInt(id)));
+        }
+        return courses;
+    }
+
+    public static void deleteCourse(int id) {
+        Course course = course(id);
+        for (Student student : getStudents()) {
+            student.getStudentCourses().remove(course);
+            student.getStudentAssistingCourses().remove(course);
+            student.getStudentPreRegisteredCourses().remove(course);
+            student.getStudentSelectedCourse().remove(course);
+            student.getStudentScores().removeAll(course.getScores());
+        }
+        for (Course other : getCourses()) {
+            other.getCoursePrerequisites().remove(course);
+            other.getCourseCorequisites().remove(course);
+            other.getCourseGroup().remove(course);
+        }
+        master(course.getCourseMasterId()).getMasterCourses().remove(course);
+        getDepartmentById(course.getCourseDepartmentId()).getDepartmentCourses().remove(course);
+        session().remove(course);
+    }
+
+    public static void addMaster(int departmentId, List<String> args, byte[] image) {
+        User user = new User();
+        user.setUserType(UserType.MASTER);
+        user.setUsername(args.get(4));
+        user.setUserFullName(args.get(5));
+        user.setUserEmail(args.get(6));
+        user.setUserPhoneNumber(args.get(7));
+        user.setUserNationalNumber(args.get(8));
+        user.setUserPassword(Passwords.hash(args.get(9)));
+        user.setUserLastLoginTime(LocalDateTime.now());
+        user.setCanLogin(true);
+        user.setUserImage(image);
+        session().persist(user);
+        Master master = new Master();
+        master.setUser(user);
+        user.setMaster(master);
+        master.setMasterDepartmentId(departmentId);
+        fillMaster(master, args.get(0), args.get(1), args.get(2), args.get(3));
+        session().persist(master);
+        required(getDepartmentById(departmentId), "department").getDepartmentMasters().add(master);
+    }
+
+    public static void editMaster(List<String> args, byte[] image) {
+        Master master = master(Integer.parseInt(args.get(0)));
+        fillMaster(master, args.get(1), args.get(2), args.get(3), args.get(4));
+        User user = master.getUser();
+        user.setUsername(args.get(6));
+        user.setUserFullName(args.get(7));
+        user.setUserEmail(args.get(9));
+        user.setUserPhoneNumber(args.get(10));
+        user.setUserNationalNumber(args.get(11));
+        if (image != null) {
+            user.setUserImage(image);
+        }
+    }
+
+    private static void fillMaster(Master master, String type, String grade, String number, String room) {
+        master.setMasterType(MasterType.valueOf(type));
+        master.setMasterGrade(MasterGrade.valueOf(grade));
+        master.setMasterShipNumber(number);
+        master.setMasterRoomNumber(room);
+    }
+
+    public static void deleteMaster(int id) {
+        Master master = master(id);
+        if (!master.getMasterCourses().isEmpty()) {
+            throw new IllegalStateException("This professor still has courses");
+        }
+        User user = master.getUser();
+        getDepartmentById(master.getMasterDepartmentId()).getDepartmentMasters().remove(master);
+        session().remove(master);
+        user.setMaster(null);
+        user.setCanLogin(false);
+    }
+
+    public static void addExercise(List<String> args, byte[] file) {
+        Course course = course(Integer.parseInt(args.get(0)));
+        Exercise exercise = new Exercise();
+        exercise.setExerciseCourseId(course.getCourseId());
+        exercise.setExerciseName(args.get(1));
+        exercise.setExerciseStartTime(LocalDateTime.parse(args.get(2)));
+        exercise.setExerciseEndTime(LocalDateTime.parse(args.get(3)));
+        exercise.setExerciseDeadline(LocalDateTime.parse(args.get(4)));
+        exercise.setExplanation(args.get(5));
+        exercise.setExerciseType(ExerciseType.valueOf(args.get(6)));
+        exercise.setExerciseFile(file);
+        session().persist(exercise);
+        course.getCourseExercises().add(exercise);
+    }
+
+    public static void addAnswer(int studentId, int exerciseId, String text, byte[] file) {
+        Exercise exercise = required(getExerciseById(exerciseId), "exercise");
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(exercise.getExerciseStartTime()) || now.isAfter(exercise.getExerciseEndTime())) {
+            throw new IllegalStateException("This exercise is not open");
+        }
+        Answer answer = exercise.getExerciseAnswers().stream()
+                .filter(existing -> existing.getAnswerStudentID() == studentId).findFirst().orElse(null);
+        if (answer == null) {
+            answer = new Answer();
+            answer.setAnswerStudentID(studentId);
+            answer.setAnswerExerciseId(exerciseId);
+            answer.setAnswerUploadTime(now);
+            session().persist(answer);
+            exercise.getExerciseAnswers().add(answer);
+        }
+        answer.setAnswerUploadTime(now);
+        answer.setAnswerText(text);
+        answer.setAnswerFile(file);
+    }
+
+    public static void scoreAnswer(int answerId, String score) {
+        required(getAnswerById(answerId), "answer").setAnswerScore(Double.parseDouble(score));
+    }
+
+    public static void addEducationalContext(int courseId, String name, String text, byte[] file) {
+        Course course = course(courseId);
+        EducationalContext context = new EducationalContext();
+        context.setEducationalContextCourseId(courseId);
+        fillContext(context, name, text, file);
+        session().persist(context);
+        course.getCourseEducationalContexts().add(context);
+    }
+
+    public static void editEducationalContext(int id, String name, String text, byte[] file) {
+        fillContext(required(getEducationalContextById(id), "item"), name, text, file);
+    }
+
+    private static void fillContext(EducationalContext context, String name, String text, byte[] file) {
+        context.setEducationalContextName(name);
+        context.setEducationalContextText(text);
+        context.setEducationalContextFile(file);
+        context.setEducationalContextTime(LocalDateTime.now());
+        context.setEducationalContextType(file != null ? EducationalContextType.FILE : EducationalContextType.TEXT);
+    }
+
+    public static void deleteEducationalContext(int id) {
+        EducationalContext context = required(getEducationalContextById(id), "item");
+        course(context.getEducationalContextCourseId()).getCourseEducationalContexts().remove(context);
+        session().remove(context);
+    }
+
+    public static void setLastloginTime(int id) {
+        getUserById(id).setUserLastLoginTime(LocalDateTime.now());
+    }
+
+    public static void changeEmail(int id, String email) {
+        getUserById(id).setUserEmail(email);
+    }
+
+    public static void changePhoneNumber(int id, String phone) {
+        getUserById(id).setUserPhoneNumber(phone);
+    }
+
+    public static void changePass(int id, String password) {
+        User user = getUserById(id);
+        user.setUserPassword(Passwords.hash(password));
+        user.setUserLastLoginTime(LocalDateTime.now());
+    }
+
+    public static void addScoreProtestation(int scoreId, String text) {
+        required(getScoreById(scoreId), "score").setScoreProtestation(text);
+    }
+
+    public static void addScoreProtestationAnswer(int scoreId, String text) {
+        required(getScoreById(scoreId), "score").setScoreProtestationAnswer(text);
+    }
+
+    public static void setScoreValue(int scoreId, String value) {
+        double parsed = Double.parseDouble(value);
+        if (parsed < 0 || parsed > 20) {
+            throw new IllegalArgumentException("Scores are between 0 and 20");
+        }
+        Score score = required(getScoreById(scoreId), "score");
+        if (score.getScoreType() == ScoreType.VERIFIED) {
+            throw new IllegalStateException("This score is final");
+        }
+        score.setScoreValue(Math.round(4 * parsed) / 4.0);
+        score.setScoreType(ScoreType.TEMPORARY);
+    }
+
+    public static void verifyScores(int courseId) {
+        for (Score score : course(courseId).getScores()) {
+            if (score.getScoreType() == ScoreType.TEMPORARY) {
+                score.setScoreType(ScoreType.VERIFIED);
+            }
+        }
+    }
+
+    public static void starOrUnstarCourse(int studentId, int courseId) {
+        List<Course> starred = student(studentId).getStudentSelectedCourse();
+        Course course = course(courseId);
+        if (!starred.remove(course)) {
+            starred.add(course);
+        }
+    }
+
+    public static void preRegisterCourse(int studentId, int courseId) {
+        addIfAbsent(student(studentId).getStudentPreRegisteredCourses(), course(courseId));
+    }
+
+    public static void undoPreRegisterCourse(int studentId, int courseId) {
+        student(studentId).getStudentPreRegisteredCourses().remove(course(courseId));
+    }
+
+    public static void addTAToCourse(String studentNumber, int courseId) {
+        addIfAbsent(studentByNumber(studentNumber).getStudentAssistingCourses(), course(courseId));
+    }
+
+    public static void addStudentToCourse(String studentNumber, int courseId) {
+        Student student = studentByNumber(studentNumber);
+        Course course = course(courseId);
+        addIfAbsent(student.getStudentCourses(), course);
+        if (course.getScores().stream().noneMatch(s -> s.getScoreStudentId() == student.getId())) {
+            addScore(student, course);
+        }
+    }
+
+    public static Score addScore(Student student, Course course) {
+        Score score = new Score();
+        score.setScoreCourseId(course.getCourseId());
+        score.setScoreStudentId(student.getId());
+        score.setUnits(course.getCourseUnits());
+        session().persist(score);
+        course.getScores().add(score);
+        student.getStudentScores().add(score);
+        return score;
+    }
+
+    public static void changeGroup(int studentId, int fromCourseId, int toCourseId) {
+        Student student = student(studentId);
+        Course from = course(fromCourseId);
+        Course to = course(toCourseId);
+        if (!from.getCourseGroup().contains(to)) {
+            throw new IllegalArgumentException("Those are not groups of the same course");
+        }
+        if (student.getStudentPreRegisteredCourses().remove(from)) {
+            addIfAbsent(student.getStudentPreRegisteredCourses(), to);
+        }
+    }
+
+    /** Arguments are student type (or ALL), entry year (or 0) and the opening time. */
+    public static void setUnitSelectionTime(int departmentId, List<String> args) {
+        LocalDateTime time = LocalDateTime.parse(args.get(2));
+        int year = Integer.parseInt(args.get(1));
+        for (Student student : getStudents()) {
+            boolean typeMatches = Objects.equals(args.get(0), "ALL") || student.getStudentType().name().equals(args.get(0));
+            if (student.getStudentDepartmentId() == departmentId && typeMatches
+                    && (year == 0 || student.getEntryYear() == year)) {
+                student.setStudentRegistrationTime(time);
+            }
+        }
+    }
+
 }

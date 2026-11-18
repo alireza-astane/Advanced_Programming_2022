@@ -28,7 +28,7 @@ public class UniRequest {
     @Enumerated(EnumType.ORDINAL)
     UniRequestResultType uniRequestResult=UniRequestResultType.NOT_ANSWERED;
 
-    @Column(name = "uniRequestContext")
+    @Column(name = "uniRequestContext",length = 4000)
     String uniRequestContext="";
 
     @Column(name = "uniRequesterId",nullable = false)

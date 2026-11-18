@@ -17,7 +17,6 @@ import java.util.Set;
 @Table(name = "Student")
 public class Student {
     @Id
-    @GeneratedValue()
     @Column(name = "id")
     int id;
 
@@ -54,12 +53,12 @@ public class Student {
 
 
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "studentId")
     private java.util.List<Score> studentScores = new ArrayList<>();
 
 
-    @ManyToMany(cascade = { CascadeType.ALL })
+    @ManyToMany
     @JoinTable(
             name = "Student_Course",
             joinColumns = { @JoinColumn(name = "id") },
@@ -68,7 +67,7 @@ public class Student {
     List<Course> studentCourses = new ArrayList<>();
 
 
-    @ManyToMany(cascade = { CascadeType.ALL })
+    @ManyToMany
     @JoinTable(
             name = "TA_Course",
             joinColumns = { @JoinColumn(name = "id") },
@@ -81,7 +80,7 @@ public class Student {
     int studentSupervisorId;
 
 
-    @ManyToMany(cascade = { CascadeType.ALL })
+    @ManyToMany
     @JoinTable(
             name = "Student_PreRegisteredCourse",
             joinColumns = { @JoinColumn(name = "id") },
@@ -89,7 +88,7 @@ public class Student {
     )
     List<Course> studentPreRegisteredCourses = new ArrayList<>();
 
-    @ManyToMany(cascade = { CascadeType.ALL })
+    @ManyToMany
     @JoinTable(
             name = "Student_SelectedCourse",
             joinColumns = { @JoinColumn(name = "id") },

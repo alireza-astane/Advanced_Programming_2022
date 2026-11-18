@@ -1,77 +1,67 @@
 package network;
+
+import serverDataBase.DataManager;
 import serverDataBase.models.User;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ClientHandler extends Thread{
+public class ClientHandler {
+    private static final AtomicLong NEXT_ID = new AtomicLong(1);
 
-
-    private User user;
+    private final long id = NEXT_ID.incrementAndGet();
+    private Integer userId;
+    private boolean mustChangePassword;
     public String captchaCode;
-    public Socket socket;
-    public int authToken;
-    public RequestHandler requestHandler;
-    public Responser responser;
+    public final Socket socket;
+    public final String authToken;
+    public final RequestHandler requestHandler;
+    public final Responser responser;
 
-    public ClientHandler(Socket socket, int TOKEN) throws IOException {
-        this.socket=socket;
-        this.authToken=TOKEN;
+    public ClientHandler(Socket socket, String authToken) throws IOException {
+        this.socket = socket;
+        this.authToken = authToken;
         requestHandler = new RequestHandler(this);
         responser = new Responser(this);
     }
 
-    public User getUser() {
-        return user;
+    public long getId() {
+        return id;
     }
 
-    @Override
+    /** The logged in user, read inside the current request's transaction. */
+    public User getUser() {
+        return userId == null ? null : DataManager.getUserById(userId);
+    }
+
+    public boolean isLoggedIn() {
+        return userId != null;
+    }
+
+    public void setUser(User user) {
+        userId = user == null ? null : user.getId();
+    }
+
+    public boolean mustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+    }
+
     public void start() {
         responser.sendAuthToken(authToken);
         requestHandler.start();
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getCaptchaCode() {
-        return captchaCode;
-    }
-
-    public void setCaptchaCode(String captchaCode) {
-        this.captchaCode = captchaCode;
-    }
-
-    public Socket getSocket() {
-        return socket;
-    }
-
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
-
-    public int getAuthToken() {
-        return authToken;
-    }
-
-    public void setAuthToken(int authToken) {
-        this.authToken = authToken;
-    }
-
-    public RequestHandler getRequestHandler() {
-        return requestHandler;
-    }
-
-    public void setRequestHandler(RequestHandler requestHandler) {
-        this.requestHandler = requestHandler;
-    }
-
-    public Responser getResponser() {
-        return responser;
-    }
-
-    public void setResponser(Responser responser) {
-        this.responser = responser;
+    public void close() {
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+            // already closed
+        }
+        Server.getInstance().removeClient(this);
     }
 }

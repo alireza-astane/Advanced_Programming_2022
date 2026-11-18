@@ -16,7 +16,6 @@ import java.util.Set;
 @Table(name = "Master")
 public class Master {
     @Id
-    @GeneratedValue
     @Column(name = "id")
     int id;
 
@@ -92,7 +91,7 @@ public class Master {
     String masterRoomNumber="";
 
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "masterId")
     private List<Course> masterCourses= new ArrayList<>();
 

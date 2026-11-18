@@ -33,10 +33,10 @@ public class Exercise {
     @Enumerated(EnumType.ORDINAL)
     ExerciseType exerciseType;
 
-    @Column(name = "exerciseContext")
+    @Column(name = "exerciseContext",length = 4000)
     String exerciseContext="";
 
-    @Column(name = "explanation")
+    @Column(name = "explanation",length = 4000)
     String explanation="";
 
     @Lob

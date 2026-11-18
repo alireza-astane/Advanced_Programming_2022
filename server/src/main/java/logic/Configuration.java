@@ -1,81 +1,35 @@
 package logic;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Properties;
 
 public class Configuration {
-    public static final String CONFIGS_ADDRESS = "./src/main/resources/Configurations/configs.xml";
     public static Properties labels;
-    public static Properties configs;
-    public static Properties addresses;
     public static Properties logics;
 
-
-
-    public static void saveLabels(Properties properties){
-        saveByName(properties,"labels");
-    }
-    public static void saveConfigs(Properties properties){
-        saveByName(properties,"configs");
-    }
-    public static void saveAddresses(Properties properties){
-        saveByName(properties,"addresses");
-    }
-    public static void saveLogic(Properties properties){
-        saveByName(properties,"logics");
+    public static void load() {
+        logics = loadResource("logics");
+        labels = loadResource("labels");
     }
 
-
-    public static void load(){
-        configs = loadConfigs();
-        logics = loadByAddress((String) configs.get("logics"));
-        labels = loadByAddress((String) configs.get("labels"));
-        addresses = loadByAddress((String) configs.get("addresses"));
-
-    }
-
-
-    public static void saveByName(Properties properties,String name){
-        try(FileOutputStream output = new FileOutputStream("./src/main/resources/Configurations/"+name+".xml")){
-            properties.storeToXML(output,"");
-        } catch (IOException e) {
-            e.printStackTrace();
+    /** A setting from a system property, then the environment, then the default. */
+    public static String setting(String property, String environment, String defaultValue) {
+        String value = System.getProperty(property);
+        if (value == null) {
+            value = System.getenv(environment);
         }
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
-
-
-
-
-    public static void saveConfigs(Properties properties,String name){
-        try(FileOutputStream output = new FileOutputStream(CONFIGS_ADDRESS)){
-            properties.storeToXML(output,"");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Properties loadConfigs(){
+    private static Properties loadResource(String name) {
         Properties properties = new Properties();
-        try(FileInputStream fileInputStream = new FileInputStream(CONFIGS_ADDRESS)){
-            properties.loadFromXML(fileInputStream);
-        } catch(IOException e){
-            e.printStackTrace();
+        try (InputStream in = Configuration.class.getResourceAsStream("/Configurations/" + name + ".xml")) {
+            properties.loadFromXML(in);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
         return properties;
     }
-
-
-    public static Properties loadByAddress(String address){
-        Properties properties = new Properties();
-        try(FileInputStream fileInputStream = new FileInputStream(address)){
-            properties.loadFromXML(fileInputStream);
-        } catch(IOException e){
-            e.printStackTrace();
-        }
-        return properties;
-    }
-
 }

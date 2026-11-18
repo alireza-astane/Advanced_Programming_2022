@@ -1,2 +1,2 @@
 rootProject.name = 'campus-portal'
-include 'server', 'client'
+include 'common', 'server', 'client'
