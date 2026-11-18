@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'generals'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def javafxVersion = '21.0.13'
+def os = System.getProperty('os.name').toLowerCase()
+def arch = System.getProperty('os.arch')
+def javafxPlatform = os.contains('win') ? 'win'
+        : os.contains('mac') ? (arch == 'aarch64' ? 'mac-aarch64' : 'mac')
+        : (arch == 'aarch64' ? 'linux-aarch64' : 'linux')
+
+dependencies {
+    for (module in ['base', 'graphics', 'controls']) {
+        implementation "org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform"
+    }
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.testfx:openjfx-monocle:21.0.2'
+}
+
+application {
+    mainClass = 'generals.GuiMain'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'testfx.headless', 'true'
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'prism.order', 'sw'
+    systemProperty 'prism.text', 't2k'
+    systemProperty 'java.awt.headless', 'true'
+}
