@@ -10,7 +10,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.query.spi.StreamDecorator;
 import serverDataBase.models.*;
 
 import java.time.LocalDateTime;

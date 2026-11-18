@@ -1,0 +1,46 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'application'
+
+    group = 'campus'
+    version = '1.0.0'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    ext {
+        log4jVersion = '2.26.1'
+        gsonVersion = '2.15.0'
+        lombokVersion = '1.18.48'
+        hibernateVersion = '6.6.59.Final'
+        h2Version = '2.5.252'
+        javafxVersion = '21.0.13'
+    }
+
+    dependencies {
+        implementation "com.google.code.gson:gson:$gsonVersion"
+        implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"
+        implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
+        implementation "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion"
+        compileOnly "org.projectlombok:lombok:$lombokVersion"
+        annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+        testImplementation platform('org.junit:junit-bom:5.13.4')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}

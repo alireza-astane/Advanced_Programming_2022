@@ -1,0 +1,17 @@
+def os = System.getProperty('os.name').toLowerCase()
+def arch = System.getProperty('os.arch')
+def javafxPlatform = os.contains('win') ? 'win'
+        : os.contains('mac') ? (arch == 'aarch64' ? 'mac-aarch64' : 'mac')
+        : (arch == 'aarch64' ? 'linux-aarch64' : 'linux')
+
+dependencies {
+    for (module in ['base', 'graphics', 'controls', 'fxml']) {
+        implementation "org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform"
+    }
+    implementation 'no.tornado:tornadofx-controls:1.0.6'
+    implementation 'com.jfoenix:jfoenix:9.0.10'
+}
+
+application {
+    mainClass = 'ClientMain'
+}
