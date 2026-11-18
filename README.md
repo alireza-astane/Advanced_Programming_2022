@@ -32,7 +32,7 @@ Black moves first. You win by capturing the enemy king. There is no check or che
 - Pieces cannot jump.
 - A piece upgrades when it ends a move in the two rows nearest the enemy.
 - A captured piece goes to your hand and loses its upgrade. On a later turn you can drop it on any empty square.
-- A dropped piece stays plain until it moves.
+- A piece dropped in those two rows does not upgrade on landing. It upgrades if it later ends a move there. A pawn, lance or bishop dropped on the very last row can never move, because those pieces only go forward.
 
 The marks on each tile show how it moves: a dot is one step, two dots are up to two steps, and a line is any distance.
 

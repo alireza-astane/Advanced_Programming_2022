@@ -124,6 +124,36 @@ class GameTest {
     }
 
     @Test
+    void pieceDroppedInTheLastRowsUpgradesOnlyWhenItLaterMovesThere() {
+        Game game = Game.empty(WHITE);
+        game.addToHand(WHITE, PAWN);
+        game.set(at(11), new Piece(KING, WHITE, false));
+        game.set(at(55), new Piece(KING, BLACK, false));
+        assertTrue(game.play(Move.drop(PAWN, at(34))));
+        assertFalse(game.pieceAt(at(34)).upgraded());
+        assertTrue(game.play(new Move(KING, at(55), at(54))));
+        assertTrue(game.play(new Move(PAWN, at(34), at(35))));
+        assertTrue(game.pieceAt(at(35)).upgraded());
+    }
+
+    @Test
+    void forwardOnlyPieceDroppedOnTheLastRowCannotMove() {
+        for (PieceType type : List.of(PAWN, LANCE, BISHOP)) {
+            Game game = Game.empty(WHITE);
+            game.addToHand(WHITE, type);
+            assertTrue(game.play(Move.drop(type, at(35))));
+            assertTrue(game.targets(at(35)).isEmpty(), type.name());
+        }
+    }
+
+    @Test
+    void leavingTheLastRowsDoesNotUpgrade() {
+        Game game = with(WHITE, at(34), new Piece(SILVER_GENERAL, WHITE, false));
+        assertTrue(game.play(new Move(SILVER_GENERAL, at(34), at(23))));
+        assertFalse(game.pieceAt(at(23)).upgraded());
+    }
+
+    @Test
     void capturingTheKingEndsTheGame() {
         Game game = with(WHITE, CENTER, new Piece(KING, WHITE, false));
         game.set(at(34), new Piece(KING, BLACK, false));

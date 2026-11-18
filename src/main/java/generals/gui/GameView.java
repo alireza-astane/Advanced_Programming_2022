@@ -34,7 +34,7 @@ final class GameView extends BorderPane implements BoardCanvas.Listener {
 
             A captured piece joins your hand. On a later turn you can drop it on any empty square instead of moving.
 
-            Pieces with dots or lines upgrade when they end a move in the two rows nearest the enemy, and their marks turn red. Kings and golden generals never upgrade. Dropped pieces start plain.
+            Pawns, lances, bishops and silver generals upgrade when they end a move in the two rows nearest the enemy, and their marks turn red. Kings and golden generals never upgrade. A piece dropped in those rows does not upgrade on landing.
 
             A red frame means that king can be captured next move.
             """;
