@@ -1,10 +1,16 @@
-name: Build
+name: Generals
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ['generals-v*']
+    paths: ['generals/**', '.github/workflows/generals.yml']
   pull_request:
+    paths: ['generals/**', '.github/workflows/generals.yml']
+
+defaults:
+  run:
+    working-directory: generals
 
 jobs:
   test:
@@ -19,7 +25,7 @@ jobs:
       - run: ./gradlew test
 
   package:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/generals-v')
     needs: test
     permissions:
       contents: write
@@ -38,6 +44,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: generals
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -47,10 +54,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew packageApp -PpackageType=${{ matrix.type }}
       - if: matrix.archive
-        working-directory: build/package
+        working-directory: generals/build/package
         run: tar -a -cf ${{ matrix.archive }} Generals*
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/package/*.deb
-            build/package/*.zip
+            generals/build/package/*.deb
+            generals/build/package/*.zip

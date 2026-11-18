@@ -4,13 +4,14 @@ A two-player board game on a 5×5 board, close to shogi: captured pieces change 
 
 ![A game being played](docs/play.gif)
 
-I wrote the first version in 2022 for the Advanced Programming course at Sharif University of Technology, with a console mode and a Swing window. This is a rewrite of it. The original is kept at the [`coursework-2022`](../../tree/coursework-2022) tag.
+I wrote the first version in 2022 for the Advanced Programming course at Sharif University of Technology, with a console mode and a Swing window. This is a rewrite of it. The original is in [`coursework/exercise_3`](../coursework/exercise_3).
 
 ## Running it
 
 You need JDK 21.
 
 ```sh
+cd generals
 ./gradlew run
 ```
 
@@ -43,6 +44,7 @@ The marks on each tile show how it moves: a dot is one step, two dots are up to 
 The original text interface still works:
 
 ```sh
+cd generals
 ./gradlew installDist
 build/install/generals/bin/generals-console
 ```
