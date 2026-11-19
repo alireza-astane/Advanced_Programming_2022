@@ -2,11 +2,14 @@
 
 Java projects that started as my coursework for the Advanced Programming course at Sharif University of Technology, taught by Dr. Tefagh.
 
+The [report](report/report.pdf) explains every exercise and the project: what each assignment asked, how the code is designed, the methods and tools used, and how everything was tested and packaged. Its LaTeX source is in [`report/`](report/).
+
 | Folder | What it is | State |
 |---|---|---|
 | [`generals/`](generals/) | A 5×5 shogi-style board game with a JavaFX interface, a console mode and a computer opponent | Finished |
 | [`campus-portal/`](campus-portal/) | A university portal with a socket server and a JavaFX desktop client | Finished |
 | [`coursework/`](coursework/) | The exercises and final project as I left them in 2022, with the assignments | Archive |
+| [`report/`](report/) | A report on all of the above, in LaTeX and [PDF](report/report.pdf) | |
 
 ## Generals
 
