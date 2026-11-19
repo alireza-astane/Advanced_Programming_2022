@@ -177,7 +177,7 @@
 
 .scroll-bar { -fx-background-color: transparent; }
 .scroll-bar .track, .scroll-bar .track-background { -fx-background-color: transparent; }
-.scroll-bar .thumb { -fx-background-color: -line; -fx-background-radius: 4; -fx-background-insets: 2; }
+.scroll-bar .thumb { -fx-background-color: derive(-muted, 25%); -fx-background-radius: 4; -fx-background-insets: 2; }
 .scroll-bar .increment-button, .scroll-bar .decrement-button { -fx-padding: 0; -fx-background-color: transparent; }
 .scroll-bar .increment-arrow, .scroll-bar .decrement-arrow { -fx-padding: 0; -fx-shape: null; }
 .corner { -fx-background-color: transparent; }

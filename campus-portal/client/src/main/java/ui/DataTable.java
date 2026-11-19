@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-/** A table of server rows that keeps its selection and scroll position when refreshed. */
+/** A table of server rows that keeps its selection when refreshed. Row actions come first so they never scroll away. */
 public final class DataTable {
     public record Action(String label, Predicate<Map<String, String>> visible, Consumer<Map<String, String>> run,
                          boolean danger) {
@@ -38,7 +38,6 @@ public final class DataTable {
     private static final double CHARACTER_WIDTH = 7.1;
     private static final double CELL_PADDING = 18;
     private static final double MAX_COLUMN_WIDTH = 430;
-    private static final double MIN_COLUMN_WIDTH = 48;
     private static final double SCROLLBAR_ROOM = 18;
 
     private final Map<TableColumn<Map<String, String>, String>, Function<Map<String, String>, String>> textColumns =
@@ -83,7 +82,7 @@ public final class DataTable {
                 setGraphic(row == null ? null : buttons(row, actions));
             }
         });
-        table.getColumns().add(column);
+        table.getColumns().add(0, column);
         return this;
     }
 
@@ -116,21 +115,15 @@ public final class DataTable {
         }
     }
 
-    /** Sizes columns to their contents, sharing spare width or shrinking them all so the actions stay in view. */
+    /** Sizes columns to their full contents. Spare width is shared out; otherwise the table scrolls sideways. */
     private void fitColumns() {
         double used = table.getColumns().stream().filter(column -> !textColumns.containsKey(column))
                 .mapToDouble(TableColumn::getPrefWidth).sum();
         Map<TableColumn<Map<String, String>, String>, Double> natural = new LinkedHashMap<>();
         textColumns.forEach((column, value) -> natural.put(column, naturalWidth(column, value)));
         double total = natural.values().stream().mapToDouble(Double::doubleValue).sum();
-        double available = table.getWidth() - SCROLLBAR_ROOM - used;
-        if (available <= 0) {
-            return;
-        }
-        double spare = available - total;
-        double shrink = spare < 0 ? available / total : 1;
-        natural.forEach((column, width) -> column.setPrefWidth(spare < 0
-                ? Math.max(MIN_COLUMN_WIDTH, width * shrink) : width + spare / natural.size()));
+        double spare = Math.max(0, table.getWidth() - SCROLLBAR_ROOM - used - total);
+        natural.forEach((column, width) -> column.setPrefWidth(width + spare / natural.size()));
     }
 
     private double naturalWidth(TableColumn<Map<String, String>, String> column,
