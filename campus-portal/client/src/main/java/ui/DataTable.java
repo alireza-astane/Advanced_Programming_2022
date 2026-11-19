@@ -11,6 +11,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -34,13 +35,22 @@ public final class DataTable {
         }
     }
 
+    private static final double CHARACTER_WIDTH = 7.1;
+    private static final double CELL_PADDING = 18;
+    private static final double MAX_COLUMN_WIDTH = 430;
+    private static final double MIN_COLUMN_WIDTH = 48;
+    private static final double SCROLLBAR_ROOM = 18;
+
+    private final Map<TableColumn<Map<String, String>, String>, Function<Map<String, String>, String>> textColumns =
+            new LinkedHashMap<>();
     private final ObservableList<Map<String, String>> rows = FXCollections.observableArrayList();
     private final FilteredList<Map<String, String>> filtered = new FilteredList<>(rows);
     private final TableView<Map<String, String>> table = new TableView<>(filtered);
 
     public DataTable(String emptyText) {
         table.setPlaceholder(new Label(emptyText));
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        table.widthProperty().addListener((observable, before, width) -> fitColumns());
     }
 
     public TableView<Map<String, String>> view() {
@@ -55,12 +65,14 @@ public final class DataTable {
         TableColumn<Map<String, String>, String> column = new TableColumn<>(title);
         column.setCellValueFactory(cell -> new ReadOnlyStringWrapper(value.apply(cell.getValue())));
         table.getColumns().add(column);
+        textColumns.put(column, value);
         return this;
     }
 
     public DataTable actions(double width, Action... actions) {
         TableColumn<Map<String, String>, String> column = new TableColumn<>("");
         column.setMinWidth(width);
+        column.setPrefWidth(width);
         column.setMaxWidth(width);
         column.setSortable(false);
         column.setCellFactory(ignored -> new TableCell<>() {
@@ -97,10 +109,37 @@ public final class DataTable {
         }
         Map<String, String> selected = table.getSelectionModel().getSelectedItem();
         rows.setAll(newRows);
+        fitColumns();
         if (selected != null) {
             newRows.stream().filter(row -> sameRecord(row, selected)).findFirst()
                     .ifPresent(row -> table.getSelectionModel().select(row));
         }
+    }
+
+    /** Sizes columns to their contents, sharing spare width or shrinking them all so the actions stay in view. */
+    private void fitColumns() {
+        double used = table.getColumns().stream().filter(column -> !textColumns.containsKey(column))
+                .mapToDouble(TableColumn::getPrefWidth).sum();
+        Map<TableColumn<Map<String, String>, String>, Double> natural = new LinkedHashMap<>();
+        textColumns.forEach((column, value) -> natural.put(column, naturalWidth(column, value)));
+        double total = natural.values().stream().mapToDouble(Double::doubleValue).sum();
+        double available = table.getWidth() - SCROLLBAR_ROOM - used;
+        if (available <= 0) {
+            return;
+        }
+        double spare = available - total;
+        double shrink = spare < 0 ? available / total : 1;
+        natural.forEach((column, width) -> column.setPrefWidth(spare < 0
+                ? Math.max(MIN_COLUMN_WIDTH, width * shrink) : width + spare / natural.size()));
+    }
+
+    private double naturalWidth(TableColumn<Map<String, String>, String> column,
+                                Function<Map<String, String>, String> value) {
+        int longest = column.getText().length() + 2;
+        for (Map<String, String> row : rows) {
+            longest = Math.max(longest, value.apply(row).length());
+        }
+        return Math.min(MAX_COLUMN_WIDTH, longest * CHARACTER_WIDTH + CELL_PADDING);
     }
 
     private static boolean sameRecord(Map<String, String> first, Map<String, String> second) {

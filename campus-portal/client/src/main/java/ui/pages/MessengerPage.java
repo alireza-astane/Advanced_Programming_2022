@@ -237,9 +237,10 @@ final class MessengerPage extends Page {
         Runnable apply = () -> table.setFilter(row -> Choices.matches(filters[0], row.get("department"))
                 && Choices.matches(filters[1], Ui.words(row.get("level"))) && Choices.matches(filters[2], row.get("entryYear")));
         String[] keys = {"department", "level", "entryYear"};
+        String[] all = {"All departments", "All levels", "All years"};
         for (int i = 0; i < keys.length; i++) {
             String key = keys[i];
-            filters[i] = Choices.filter(apply, contacts.table("contacts").stream()
+            filters[i] = Choices.filter(all[i], apply, contacts.table("contacts").stream()
                     .map(row -> key.equals("level") ? Ui.words(row.get(key)) : row.get(key))
                     .filter(value -> !value.isEmpty()).distinct().sorted().toArray(String[]::new));
         }

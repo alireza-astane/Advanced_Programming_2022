@@ -91,6 +91,31 @@ class PortalWindowTest {
     }
 
     @Test
+    void rowButtonsReachTheServerAndShowItsAnswer() throws Exception {
+        PortalApp app = signedIn("student.sara");
+        openPage(app, "Unit selection");
+        fxRun(() -> {
+            app.portal().stage().getScene().getRoot().applyCss();
+            app.portal().stage().getScene().getRoot().layout();
+        });
+        settle();
+        Button take = fx(() -> app.portal().stage().getScene().getRoot().lookupAll(".link-button").stream()
+                .filter(node -> node instanceof Button button && button.getText().equals("Take") && isRowFor(button, "Algorithms"))
+                .map(Button.class::cast).findFirst().orElseThrow());
+        fxRun(take::fire);
+        until(() -> call(() -> fx(() -> app.portal().shell().failure().contains("prerequisites"))));
+    }
+
+    private static boolean isRowFor(javafx.scene.Node node, String course) {
+        for (javafx.scene.Node current = node; current != null; current = current.getParent()) {
+            if (current instanceof javafx.scene.control.TableRow<?> row && row.getItem() instanceof Map<?, ?> item) {
+                return course.equals(item.get("name"));
+            }
+        }
+        return false;
+    }
+
+    @Test
     void studentsWithoutAWindowDoNotSeeUnitSelection() throws Exception {
         PortalApp app = signedIn("student.omid");
         assertTrue(navigationItems(app).stream().noneMatch(item -> item.getText().equals("Unit selection")));

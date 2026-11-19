@@ -82,6 +82,9 @@ public final class Portal {
     }
 
     public void setShell(Shell shell) {
+        if (this.shell != null && this.shell != shell) {
+            this.shell.stop();
+        }
         this.shell = shell;
     }
 
@@ -179,7 +182,6 @@ public final class Portal {
             connection.send(new Request(RequestType.LOGOUT, sessionKey));
         }
         sessionKey = "";
-        shell = null;
         app.showLogin("");
     }
 

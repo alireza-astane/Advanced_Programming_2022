@@ -5,7 +5,7 @@ Java projects that started as my coursework for the Advanced Programming course 
 | Folder | What it is | State |
 |---|---|---|
 | [`generals/`](generals/) | A 5×5 shogi-style board game with a JavaFX interface, a console mode and a computer opponent | Finished |
-| [`campus-portal/`](campus-portal/) | A university portal with a socket server and a JavaFX desktop client | In progress |
+| [`campus-portal/`](campus-portal/) | A university portal with a socket server and a JavaFX desktop client | Finished |
 | [`coursework/`](coursework/) | The exercises and final project as I left them in 2022, with the assignments | Archive |
 
 Each project builds on its own with JDK 21. See its README for how to run it.

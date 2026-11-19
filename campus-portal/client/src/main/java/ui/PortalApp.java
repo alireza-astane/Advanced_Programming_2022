@@ -21,7 +21,7 @@ public class PortalApp extends Application {
     /** Builds the window's content, so tests can open it without launching the toolkit twice. */
     public void open(Stage stage) {
         portal = new Portal(this, stage);
-        scene = new Scene(new LoginView(portal, this, "").view(), 1180, 760);
+        scene = new Scene(new LoginView(portal, this, "").view(), 1320, 780);
         scene.getStylesheets().add(PortalApp.class.getResource("/ui/portal.css").toExternalForm());
         stage.setScene(scene);
         applyTheme();

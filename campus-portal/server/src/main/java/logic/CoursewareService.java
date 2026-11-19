@@ -173,7 +173,7 @@ public final class CoursewareService {
         content.setCourse(course);
         content.setName(call.required(1, "Name"));
         DataManager.save(content);
-        return new Response().put("id", content.getId());
+        return new Response().put("id", content.getId()).put("name", content.getName());
     }
 
     private static Response deleteContent(Call call) {

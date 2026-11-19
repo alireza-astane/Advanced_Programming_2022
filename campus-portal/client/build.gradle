@@ -28,7 +28,27 @@ test {
     systemProperty 'testfx.headless', 'true'
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'headless.geometry', '1600x1000-32'
     systemProperty 'prism.order', 'sw'
+}
+
+// Builds a self-contained client. The JDK used must include jmods.
+tasks.register('packageApp', Exec) {
+    dependsOn 'installDist'
+    def javaHome = javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile
+    def output = layout.buildDirectory.dir('package').get().asFile
+    doFirst {
+        delete output
+    }
+    executable new File(javaHome, 'bin/jpackage')
+    args '--type', project.findProperty('packageType') ?: 'app-image',
+            '--name', 'CampusPortal',
+            '--app-version', version,
+            '--input', layout.buildDirectory.dir('install/client/lib').get().asFile.path,
+            '--main-jar', "client-${version}.jar",
+            '--main-class', 'ClientMain',
+            '--add-modules', 'java.base,java.desktop,java.logging,java.management,java.naming,java.scripting,java.sql,java.xml,jdk.unsupported',
+            '--dest', output.path
 }
 
 tasks.register('screenshots', Test) {
@@ -46,5 +66,6 @@ tasks.register('screenshots', Test) {
     systemProperty 'testfx.headless', 'true'
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'headless.geometry', '1600x1000-32'
     systemProperty 'prism.order', 'sw'
 }

@@ -9,6 +9,10 @@ dependencies {
     testRuntimeOnly "com.h2database:h2:$h2Version"
 }
 
+test {
+    forkEvery = 1
+}
+
 application {
     applicationDefaultJvmArgs = ["-Djava.awt.headless=true"]
     mainClass = 'ServerMain'

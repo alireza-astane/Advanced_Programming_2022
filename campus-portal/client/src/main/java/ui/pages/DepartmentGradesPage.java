@@ -18,8 +18,8 @@ final class DepartmentGradesPage extends Page {
     private final DataTable summaries = new DataTable("No courses.");
     private final TextField student = Ui.search("Student name or number", this::applyFilter);
     private final TextField master = Ui.search("Professor", this::applyFilter);
-    private final ChoiceBox<String> course = Choices.filter(this::applyFilter);
-    private final ChoiceBox<String> state = Choices.filter(this::applyFilter, "Temporary", "Final");
+    private final ChoiceBox<String> course = Choices.filter("All courses", this::applyFilter);
+    private final ChoiceBox<String> state = Choices.filter("All states", this::applyFilter, "Temporary", "Final");
 
     DepartmentGradesPage(Portal portal) {
         super(portal);

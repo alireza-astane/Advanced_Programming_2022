@@ -60,22 +60,23 @@
 .sidebar {
     -fx-background-color: -surface;
     -fx-border-color: transparent -line transparent transparent;
-    -fx-padding: 18 10 12 10;
-    -fx-spacing: 1;
 }
+
+.sidebar-list { -fx-background-color: -surface; -fx-padding: 16 10 8 10; -fx-spacing: 1; }
+.sidebar-footer { -fx-padding: 6 10 10 10; -fx-border-color: -line transparent transparent transparent; }
 
 .nav-group {
     -fx-text-fill: -muted;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-padding: 13 8 3 8;
+    -fx-padding: 10 8 2 8;
 }
 
 .nav-item {
     -fx-background-color: transparent;
     -fx-background-radius: 3;
     -fx-alignment: center-left;
-    -fx-padding: 5 8 5 8;
+    -fx-padding: 4 8 4 8;
     -fx-text-fill: -ink;
 }
 
@@ -173,3 +174,18 @@
 .chat-scroll, .chat-scroll > .viewport, .scroll-pane, .scroll-pane > .viewport { -fx-background-color: transparent; -fx-background: transparent; }
 .dialog-pane { -fx-background-color: -paper; }
 .dialog-pane > .button-bar > .container { -fx-background-color: -paper; }
+
+.scroll-bar { -fx-background-color: transparent; }
+.scroll-bar .track, .scroll-bar .track-background { -fx-background-color: transparent; }
+.scroll-bar .thumb { -fx-background-color: -line; -fx-background-radius: 4; -fx-background-insets: 2; }
+.scroll-bar .increment-button, .scroll-bar .decrement-button { -fx-padding: 0; -fx-background-color: transparent; }
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow { -fx-padding: 0; -fx-shape: null; }
+.corner { -fx-background-color: transparent; }
+
+.tab-pane > .tab-header-area > .tab-header-background { -fx-background-color: transparent; -fx-border-color: transparent transparent -line transparent; }
+.tab-pane > .tab-header-area { -fx-padding: 0; }
+.tab-pane > .tab-header-area > .headers-region > .tab { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 5 12 5 12; }
+.tab-pane > .tab-header-area > .headers-region > .tab:selected { -fx-background-color: -surface; -fx-border-color: -line -line transparent -line; }
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .focus-indicator { -fx-border-color: transparent; }
+.tab-pane .tab-label { -fx-text-fill: -ink; }
+.tab-content-area .page-body { -fx-padding: 10 0 0 0; }

@@ -16,7 +16,6 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -103,20 +102,19 @@ public final class Shell {
         person.setPadding(new Insets(0, 8, 4, 8));
         navigation.getChildren().addAll(brand, person);
         new Navigation(portal, this).build();
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-        Button theme = sidebarButton("Switch theme", app::toggleTheme);
-        Button signOut = sidebarButton("Sign out", this::signOut);
-        Button exit = sidebarButton("Exit", Platform::exit);
-        navigation.getChildren().addAll(spacer, theme, signOut, exit);
-        navigation.getStyleClass().add("sidebar");
-        navigation.setPrefWidth(205);
-        navigation.setMinWidth(205);
+        navigation.getStyleClass().add("sidebar-list");
         ScrollPane scroll = new ScrollPane(navigation);
         scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        return scroll;
+        VBox footer = new VBox(1, sidebarButton("Switch theme", app::toggleTheme),
+                sidebarButton("Sign out", this::signOut), sidebarButton("Exit", Platform::exit));
+        footer.getStyleClass().add("sidebar-footer");
+        BorderPane sidebar = new BorderPane(scroll);
+        sidebar.setBottom(footer);
+        sidebar.getStyleClass().add("sidebar");
+        sidebar.setPrefWidth(205);
+        sidebar.setMinWidth(205);
+        return sidebar;
     }
 
     private static Button sidebarButton(String text, Runnable action) {
@@ -128,8 +126,11 @@ public final class Shell {
     }
 
     private void signOut() {
-        refresher.stop();
         portal.logout();
+    }
+
+    void stop() {
+        refresher.stop();
     }
 
     public void addGroup(String name) {

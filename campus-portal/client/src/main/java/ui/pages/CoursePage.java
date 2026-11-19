@@ -86,7 +86,7 @@ final class CoursePage extends Page {
     private void addContent() {
         Ui.formDialog(portal, "New content", "Create", new Form().text("name", "Title", ""),
                 f -> new Request(RequestType.CW_ADD_CONTENT, courseId, f.get("name")),
-                "", response -> open(new ContentPage(portal, response.get("id"), "Content")));
+                "", response -> open(new ContentPage(portal, response.get("id"), response.get("name"))));
     }
 
     private void addMember() {

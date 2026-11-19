@@ -297,6 +297,38 @@ class ServerTest {
     }
 
     @Test
+    void aFullGroupNeedsTheDeputy() throws IOException {
+        String first;
+        String second;
+        try (PortalClient deputy = as("deputy.math")) {
+            int head = userId("head.math");
+            first = deputy.ok(SAVE_COURSE, "", "Topology", "MA301", 1, head, "UNDERGRADUATE", 3, 5, false, future(60),
+                    "Thu 10:00-11:00", "", "", "").get("id");
+            second = deputy.ok(SAVE_COURSE, "", "Topology", "MA301", 2, head, "UNDERGRADUATE", 3, 1, false, future(61),
+                    "Thu 12:00-13:00", "", "", "").get("id");
+            deputy.ok(SET_SELECTION_WINDOW, "UNDERGRADUATE", 2024, LocalDateTime.now().minusHours(1).withNano(0).withSecond(0), future(1));
+        }
+        try (PortalClient head = as("head.math")) {
+            head.ok(CW_ADD_MEMBER, second, "24203001", false);
+        }
+        try (PortalClient lena = as("student.lena")) {
+            lena.ok(TAKE_COURSE, first);
+            assertTrue(lena.ok(CHANGE_GROUP, first, second).get("message").contains("deputy"));
+        }
+        try (PortalClient deputy = as("deputy.math")) {
+            String id = deputy.ok(INBOX).table("items").stream().filter(row -> row.get("type").equals("GROUP_CHANGE"))
+                    .findFirst().orElseThrow().get("id");
+            deputy.ok(ANSWER_REQUEST, id, true);
+        }
+        try (PortalClient lena = as("student.lena")) {
+            List<Map<String, String>> courses = lena.ok(UNIT_SELECTION).table("courses");
+            assertEquals("true", find(courses, "id", second).get("selected"));
+            assertEquals("false", find(courses, "id", first).get("selected"));
+            assertEquals("Your group was changed.", lena.ok(CHANGE_GROUP, second, first).get("message"));
+        }
+    }
+
+    @Test
     void deputySetsSelectionWindows() throws IOException {
         try (PortalClient deputy = as("deputy.math")) {
             assertEquals("Window set for 1 students.", deputy.ok(SET_SELECTION_WINDOW, "PHD", 2024,

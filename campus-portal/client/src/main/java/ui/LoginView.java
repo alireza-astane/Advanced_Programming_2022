@@ -52,6 +52,8 @@ final class LoginView {
         captcha.setPromptText("Code from the picture");
         message.getStyleClass().add("error");
         message.setWrapText(true);
+        message.managedProperty().bind(message.textProperty().isNotEmpty());
+        offlineChoices.managedProperty().bind(javafx.beans.binding.Bindings.isNotEmpty(offlineChoices.getChildren()));
         signIn.getStyleClass().add("primary");
         signIn.setDefaultButton(true);
         signIn.setMaxWidth(Double.MAX_VALUE);

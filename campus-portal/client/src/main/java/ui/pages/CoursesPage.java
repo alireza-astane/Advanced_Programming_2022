@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 final class CoursesPage extends TablePage {
     private final TextField search = Ui.search("Course name or number", this::applyFilter);
     private final TextField professor = Ui.search("Professor", this::applyFilter);
-    private final ChoiceBox<String> department = Choices.filter(this::applyFilter);
-    private final ChoiceBox<String> level = Choices.filter(this::applyFilter, "Undergraduate", "Masters", "Phd");
-    private final ChoiceBox<String> units = Choices.filter(this::applyFilter, "1", "2", "3", "4");
+    private final ChoiceBox<String> department = Choices.filter("All departments", this::applyFilter);
+    private final ChoiceBox<String> level = Choices.filter("All levels", this::applyFilter, "Undergraduate", "Masters", "Phd");
+    private final ChoiceBox<String> units = Choices.filter("Any units", this::applyFilter, "1", "2", "3", "4");
     private List<Map<String, String>> courses = List.of();
     private List<Map<String, String>> masters = List.of();
 

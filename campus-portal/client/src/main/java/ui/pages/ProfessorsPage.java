@@ -16,9 +16,9 @@ import java.util.Map;
 
 final class ProfessorsPage extends TablePage {
     private final TextField name = Ui.search("Name", this::applyFilter);
-    private final ChoiceBox<String> grade = Choices.filter(this::applyFilter,
+    private final ChoiceBox<String> grade = Choices.filter("All grades", this::applyFilter,
             "Assistant professor", "Associate professor", "Professor");
-    private final ChoiceBox<String> department = Choices.filter(this::applyFilter);
+    private final ChoiceBox<String> department = Choices.filter("All departments", this::applyFilter);
     private List<Map<String, String>> masters = List.of();
 
     ProfessorsPage(Portal portal) {

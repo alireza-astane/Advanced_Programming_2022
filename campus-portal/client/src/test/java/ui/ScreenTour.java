@@ -18,10 +18,9 @@ import static ui.PortalHarness.*;
 /** Saves a picture of the main screens. Run with the {@code screenshots} Gradle task. */
 class ScreenTour {
     private static final Map<String, Set<String>> TOUR = Map.of(
-            "student.sara", Set.of("Home", "Courses", "Unit selection", "Weekly plan", "Requests", "Academic record", "Messenger", "Profile"),
-            "prof.karimi", Set.of("Grade book", "Inbox", "My courses"),
-            "deputy.cs", Set.of("Department grades", "Selection windows", "Professors"),
-            "registrar", Set.of("Student search"));
+            "student.sara", Set.of("Courses", "Unit selection", "Weekly plan"),
+            "prof.karimi", Set.of("Grade book"),
+            "deputy.cs", Set.of("Department grades"));
 
     @Test
     void capture() throws Exception {

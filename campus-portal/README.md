@@ -1,10 +1,10 @@
 # Campus Portal
 
-A university portal with a socket server and a JavaFX desktop client. Students, professors, department staff and the registrar each get their own pages for courses, grades, requests, coursework and messages.
+A university portal with a socket server and a JavaFX desktop client. Students select courses, follow their grades, send requests and submit coursework. Professors grade and run their course pages. Department staff manage courses and people, and everyone can message each other.
 
-I started it in 2022 as the final project of the Advanced Programming course at Sharif University of Technology. The version I submitted is in [`coursework/Project`](../coursework/Project).
+![The unit selection screen](docs/screens/student-sara-unit-selection.png)
 
-**This is a work in progress.** The server has been rebuilt and tested. The desktop screens are still the 2022 ones, and some of them do not open yet.
+I started this in 2022 as the final project of the Advanced Programming course at Sharif University of Technology, and did not finish it then. The version I left is in [`coursework/Project`](../coursework/Project). This is a rewrite that completes the brief. [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) lists what the brief asked for.
 
 ## Running it
 
@@ -24,14 +24,28 @@ To run them separately, use two terminals, because the server keeps running unti
 
 The first start creates a local database in a `data` folder with made-up people. Every demo account uses the password `demo1234`:
 
-| Role | Username |
+| Role | Usernames |
 |---|---|
-| Student | `student.sara`, `student.omid`, `student.nika`, `student.reza`, `student.lena` |
+| Undergraduate | `student.sara`, `student.omid`, `student.lena` |
+| Master's | `student.nika`, `student.arman` |
+| PhD | `student.reza`, `student.yasi` |
 | Professor | `prof.karimi`, `prof.moradi` |
 | Head of department | `head.cs`, `head.math` |
 | Deputy | `deputy.cs`, `deputy.math` |
 | Registrar | `registrar` |
 | Administrator | `admin` |
+
+`student.sara` has an open unit selection window. Passwords must be changed after three hours away, as the brief requires, but the demo accounts are reset each time the server starts.
+
+## How it is built
+
+```
+client (JavaFX)  ──  one line of JSON per message over a socket  ──  server  ──  Hibernate  ──  H2 or MariaDB
+```
+
+- `common` holds the message format shared by both sides.
+- `server` connects each request type to a handler and the roles allowed to use it. Every request runs in its own database transaction, and handlers check that the record belongs to the user.
+- `client` has one window with a page per task. Pages refresh themselves every few seconds. Some are saved on disk, so home, weekly plan, exams, academic record, profile and recent messages still open when the server is away.
 
 ## Settings
 
@@ -42,13 +56,21 @@ The first start creates a local database in a `data` folder with made-up people.
 | `PORTAL_DB_URL`, `PORTAL_DB_USER`, `PORTAL_DB_PASSWORD` | Local H2 file |
 | `PORTAL_DEMO_DATA` | `true` |
 
-## Tests
+## Building and testing
 
 ```sh
 ./gradlew test
+./gradlew :client:screenshots
+./gradlew :client:packageApp
 ```
 
-The server tests talk to a running server over real sockets. The client test starts the server in its own process and logs in through the login screen.
+The server tests talk to a running server over real sockets. The client tests start the server in its own process and drive the real window without a display. `packageApp` needs a JDK that includes `jmods`.
+
+## Limits
+
+- Connections are not encrypted, so run it only on a network you trust.
+- Attachments are downloaded rather than played inside the app.
+- MariaDB should work through `PORTAL_DB_URL`, but I have only tested H2.
 
 ## License
 

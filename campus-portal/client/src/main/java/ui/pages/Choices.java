@@ -10,7 +10,6 @@ import java.util.Map;
 
 /** Option lists used by filters and forms. */
 final class Choices {
-    static final String ANY = "Any";
     static final List<Form.Option> LEVELS = options("UNDERGRADUATE", "MASTERS", "PHD");
     static final List<Form.Option> GRADES = options("ASSISTANT_PROFESSOR", "ASSOCIATE_PROFESSOR", "PROFESSOR");
 
@@ -29,28 +28,30 @@ final class Choices {
         return rows.stream().map(row -> new Form.Option(row.get(valueKey), row.get(labelKey))).toList();
     }
 
-    static ChoiceBox<String> filter(Runnable changed, String... values) {
+    /** A filter whose first entry, such as "All levels", matches everything. */
+    static ChoiceBox<String> filter(String all, Runnable changed, String... values) {
         ChoiceBox<String> box = new ChoiceBox<>();
-        box.getItems().add(ANY);
+        box.getItems().add(all);
         box.getItems().addAll(values);
-        box.setValue(ANY);
+        box.setValue(all);
         box.setOnAction(event -> changed.run());
         return box;
     }
 
     /** Replaces a filter's options without losing the current choice. */
     static void update(ChoiceBox<String> box, List<String> values) {
+        String all = box.getItems().get(0);
         List<String> items = new ArrayList<>();
-        items.add(ANY);
+        items.add(all);
         items.addAll(values);
         if (!box.getItems().equals(items)) {
             String current = box.getValue();
             box.getItems().setAll(items);
-            box.setValue(items.contains(current) ? current : ANY);
+            box.setValue(items.contains(current) ? current : all);
         }
     }
 
     static boolean matches(ChoiceBox<String> box, String value) {
-        return ANY.equals(box.getValue()) || box.getValue() == null || box.getValue().equals(value);
+        return box.getValue() == null || box.getValue().equals(box.getItems().get(0)) || box.getValue().equals(value);
     }
 }
