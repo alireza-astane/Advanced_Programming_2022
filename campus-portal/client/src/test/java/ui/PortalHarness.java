@@ -42,6 +42,10 @@ final class PortalHarness {
         startServer();
     }
 
+    static void startToolkitOnly() {
+        startToolkit();
+    }
+
     private static synchronized void startToolkit() {
         if (!toolkitStarted) {
             Thread.setDefaultUncaughtExceptionHandler((thread, error) -> UNCAUGHT.add(error));

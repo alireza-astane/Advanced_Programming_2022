@@ -8,6 +8,7 @@ def javafxPlatform = os.contains('win') ? 'win'
 
 dependencies {
     implementation project(':common')
+    implementation project(':server')
     for (module in ['base', 'graphics', 'controls']) {
         implementation "org.openjfx:javafx-$module:$javafxVersion:$javafxPlatform"
     }
@@ -20,6 +21,7 @@ application {
 }
 
 test {
+    forkEvery = 1
     filter { excludeTestsMatching 'ui.ScreenTour' }
     dependsOn ':server:classes'
     doFirst {
@@ -38,6 +40,9 @@ tasks.register('packageApp', Exec) {
     def javaHome = javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile
     def output = layout.buildDirectory.dir('package').get().asFile
     doFirst {
+        if (!new File(javaHome, 'jmods').isDirectory()) {
+            throw new GradleException("$javaHome has no jmods folder. Install them first.")
+        }
         delete output
     }
     executable new File(javaHome, 'bin/jpackage')
@@ -47,8 +52,21 @@ tasks.register('packageApp', Exec) {
             '--input', layout.buildDirectory.dir('install/client/lib').get().asFile.path,
             '--main-jar', "client-${version}.jar",
             '--main-class', 'ClientMain',
-            '--add-modules', 'java.base,java.desktop,java.logging,java.management,java.naming,java.scripting,java.sql,java.xml,jdk.unsupported',
+            '--description', 'University portal client with a built-in demo server',
+            '--vendor', 'Alireza Astane',
+            '--add-modules', 'java.base,java.compiler,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.scripting,java.security.jgss,java.sql,java.transaction.xa,java.xml,jdk.crypto.ec,jdk.jfr,jdk.unsupported,jdk.zipfs',
             '--dest', output.path
+    if (os.contains('win')) {
+        args '--icon', file('src/packaging/campus-portal.ico').path
+    } else if (!os.contains('mac')) {
+        args '--icon', file('src/packaging/campus-portal.png').path
+    }
+    if (project.findProperty('packageType') in ['deb', 'rpm']) {
+        args '--linux-shortcut', '--linux-menu-group', 'Education'
+    }
+    if (project.findProperty('packageType') in ['msi', 'exe']) {
+        args '--win-menu', '--win-shortcut'
+    }
 }
 
 tasks.register('screenshots', Test) {

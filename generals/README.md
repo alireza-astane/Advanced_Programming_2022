@@ -8,6 +8,8 @@ I wrote the first version in 2022 for the Advanced Programming course at Sharif 
 
 ## Running it
 
+Ready-to-run builds for Windows and Linux are on the [releases](../../../releases) page. To run it from source instead:
+
 You need JDK 21.
 
 ```sh

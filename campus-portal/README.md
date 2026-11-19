@@ -22,6 +22,8 @@ To run them separately, use two terminals, because the server keeps running unti
 ./gradlew :client:run
 ```
 
+The packaged client from the [releases](../../../releases) needs no separate server: when none is running, the login screen offers to start a demo server on your own computer.
+
 The first start creates a local database in a `data` folder with made-up people. Every demo account uses the password `demo1234`:
 
 | Role | Usernames |

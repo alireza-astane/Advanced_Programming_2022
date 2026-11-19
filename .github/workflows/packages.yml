@@ -1,0 +1,70 @@
+name: Packages
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['generals/**', 'campus-portal/**', 'packaging/**', '.github/workflows/packages.yml']
+  workflow_dispatch:
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build app images
+        run: |
+          mkdir -p dist
+          (cd generals && ./gradlew packageApp && cp -r build/package/Generals ../dist/)
+          (cd campus-portal && ./gradlew :client:packageApp && cp -r client/build/package/CampusPortal ../dist/)
+
+      - name: Build Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y squashfs-tools
+          curl -sSL -o runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+          packaging/appimage.sh dist/Generals Generals generals/src/packaging/generals.png Game runtime-x86_64 dist/Generals-x86_64.AppImage
+          packaging/appimage.sh dist/CampusPortal CampusPortal campus-portal/client/src/packaging/campus-portal.png Education runtime-x86_64 dist/CampusPortal-x86_64.AppImage
+          (cd generals && ./gradlew packageApp -PpackageType=deb && cp build/package/*.deb ../dist/)
+          (cd campus-portal && ./gradlew :client:packageApp -PpackageType=deb && cp client/build/package/*.deb ../dist/)
+          rm -rf dist/Generals dist/CampusPortal
+
+      - name: Zip Windows apps
+        if: runner.os == 'Windows'
+        working-directory: dist
+        run: |
+          tar -a -cf Generals-windows.zip Generals
+          tar -a -cf CampusPortal-windows.zip CampusPortal
+          rm -rf Generals CampusPortal
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ runner.os }}
+          path: dist/*
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

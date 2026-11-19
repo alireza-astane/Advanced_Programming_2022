@@ -30,6 +30,7 @@ final class LoginView {
     final Label message = new Label();
     private final ImageView captchaImage = new ImageView();
     private final VBox offlineChoices = new VBox(6);
+    private final Label hint = new Label();
 
     LoginView(Portal portal, PortalApp app, String initialMessage) {
         this.portal = portal;
@@ -65,7 +66,13 @@ final class LoginView {
         HBox captchaRow = new HBox(8, captchaImage, spacer, newCode);
         captchaRow.setAlignment(Pos.CENTER_LEFT);
         captchaRow.setMinHeight(54);
-        VBox card = new VBox(title, subtitle, username, password, captchaRow, captcha, signIn, message, offlineChoices);
+        hint.getStyleClass().add("muted");
+        hint.setWrapText(true);
+        hint.managedProperty().bind(hint.textProperty().isNotEmpty());
+        if (DemoServer.isRunning()) {
+            hint.setText("Demo accounts use the password demo1234. Try student.sara, prof.karimi or deputy.cs.");
+        }
+        VBox card = new VBox(title, subtitle, username, password, captchaRow, captcha, signIn, message, hint, offlineChoices);
         card.getStyleClass().add("login-card");
         loadCaptcha();
         return new StackPane(card);
@@ -93,6 +100,10 @@ final class LoginView {
             loadCaptcha();
         });
         offlineChoices.getChildren().add(retry);
+        Button demo = new Button("Start a demo server on this computer");
+        demo.setMaxWidth(Double.MAX_VALUE);
+        demo.setOnAction(event -> startDemoServer(demo));
+        offlineChoices.getChildren().add(demo);
         if (portal.hasSavedUser()) {
             Button saved = new Button("Open saved pages for " + portal.savedUserName());
             saved.setMaxWidth(Double.MAX_VALUE);
@@ -102,6 +113,28 @@ final class LoginView {
             });
             offlineChoices.getChildren().add(saved);
         }
+    }
+
+    private void startDemoServer(Button button) {
+        button.setDisable(true);
+        message.setText("Starting the demo server. This takes a few seconds the first time.");
+        Thread starter = new Thread(() -> {
+            String failure = DemoServer.start();
+            javafx.application.Platform.runLater(() -> demoServerStarted(failure, button));
+        }, "demo-server-start");
+        starter.setDaemon(true);
+        starter.start();
+    }
+
+    private void demoServerStarted(String failure, Button button) {
+        if (failure != null) {
+            button.setDisable(false);
+            message.setText(failure);
+            return;
+        }
+        message.setText("");
+        loadCaptcha();
+        hint.setText("Demo accounts use the password demo1234. Try student.sara, prof.karimi or deputy.cs.");
     }
 
     void submit() {

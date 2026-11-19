@@ -3,7 +3,6 @@ name: Generals
 on:
   push:
     branches: [main]
-    tags: ['generals-v*']
     paths: ['generals/**', '.github/workflows/generals.yml']
   pull_request:
     paths: ['generals/**', '.github/workflows/generals.yml']
@@ -24,40 +23,3 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew test
 
-  package:
-    if: startsWith(github.ref, 'refs/tags/generals-v')
-    needs: test
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            type: deb
-          - os: windows-latest
-            type: app-image
-            archive: Generals-windows.zip
-          - os: macos-latest
-            type: app-image
-            archive: Generals-macos.zip
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: generals
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew packageApp -PpackageType=${{ matrix.type }}
-      - if: matrix.archive
-        working-directory: generals/build/package
-        run: tar -a -cf ${{ matrix.archive }} Generals*
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            generals/build/package/*.deb
-            generals/build/package/*.zip
