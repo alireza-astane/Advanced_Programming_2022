@@ -22,7 +22,10 @@ application {
 
 test {
     forkEvery = 1
-    filter { excludeTestsMatching 'ui.ScreenTour' }
+    filter {
+        excludeTestsMatching 'ui.ScreenTour'
+        excludeTestsMatching 'ui.ReadmeTour'
+    }
     dependsOn ':server:classes'
     doFirst {
         systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
@@ -81,6 +84,25 @@ tasks.register('screenshots', Test) {
         systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
     }
     systemProperty 'portal.screenshots', rootProject.file('docs/screens').path
+    systemProperty 'testfx.headless', 'true'
+    systemProperty 'glass.platform', 'Monocle'
+    systemProperty 'monocle.platform', 'Headless'
+    systemProperty 'headless.geometry', '1600x1000-32'
+    systemProperty 'prism.order', 'sw'
+}
+
+tasks.register('readmeFrames', Test) {
+    description = 'Records the frames of the README tour into build/tour-frames.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching 'ui.ReadmeTour' }
+    dependsOn ':server:classes'
+    outputs.upToDateWhen { false }
+    doFirst {
+        systemProperty 'server.classpath', project(':server').sourceSets.main.runtimeClasspath.asPath
+    }
+    systemProperty 'portal.frames', layout.buildDirectory.dir('tour-frames').get().asFile.path
     systemProperty 'testfx.headless', 'true'
     systemProperty 'glass.platform', 'Monocle'
     systemProperty 'monocle.platform', 'Headless'

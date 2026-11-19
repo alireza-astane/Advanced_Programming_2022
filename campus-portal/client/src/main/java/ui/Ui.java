@@ -146,7 +146,7 @@ public final class Ui {
         if (bytes != null) {
             ImageView image = new ImageView(new Image(new ByteArrayInputStream(bytes), size, size, true, true));
             frame.getChildren().add(image);
-        } else {
+        } else if (size >= 60) {
             frame.getChildren().add(muted("No photo"));
         }
         return frame;

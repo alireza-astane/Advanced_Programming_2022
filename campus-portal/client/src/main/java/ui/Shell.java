@@ -173,6 +173,7 @@ public final class Shell {
     }
 
     public void show(Page page) {
+        toast.setVisible(false);
         current = page;
         page.attach(this);
         title.setText(page.title());

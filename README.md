@@ -8,6 +8,20 @@ Java projects that started as my coursework for the Advanced Programming course 
 | [`campus-portal/`](campus-portal/) | A university portal with a socket server and a JavaFX desktop client | Finished |
 | [`coursework/`](coursework/) | The exercises and final project as I left them in 2022, with the assignments | Archive |
 
+## Generals
+
+A two-player board game on a 5×5 board, close to shogi: captured pieces change sides and come back into play. Play another person or the computer at three levels.
+
+![Playing Generals](generals/docs/play.gif)
+
+## Campus Portal
+
+A university system with a socket server and a desktop client. Students select courses, follow their grades, send requests and hand in coursework. Professors grade and run their course pages. Department staff manage courses and people, and everyone has a messenger.
+
+![A walk through Campus Portal](campus-portal/docs/tour.gif)
+
+## Building
+
 Each project builds on its own with JDK 21. See its README for how to run it.
 
 ## Downloads

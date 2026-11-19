@@ -2,7 +2,7 @@
 
 A university portal with a socket server and a JavaFX desktop client. Students select courses, follow their grades, send requests and submit coursework. Professors grade and run their course pages. Department staff manage courses and people, and everyone can message each other.
 
-![The unit selection screen](docs/screens/student-sara-unit-selection.png)
+![A walk through the portal: signing in, filtering courses, taking a course, messaging, grading and the dark theme](docs/tour.gif)
 
 I started this in 2022 as the final project of the Advanced Programming course at Sharif University of Technology, and did not finish it then. The version I left is in [`coursework/Project`](../coursework/Project). This is a rewrite that completes the brief. [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) lists what the brief asked for.
 
